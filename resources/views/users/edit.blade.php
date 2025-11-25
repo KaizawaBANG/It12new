@@ -72,6 +72,26 @@
                             </div>
                         @enderror
                         <small class="form-help-text">Leave blank to keep current password</small>
+                        <div class="password-requirements mt-2" id="passwordRequirements" style="display: none;">
+                            <small class="form-help-text d-block mb-2"><strong>Password Requirements:</strong></small>
+                            <ul class="password-requirements-list">
+                                <li class="requirement-item" id="req-length">
+                                    <i class="bi bi-circle"></i> <span>At least 12 characters</span>
+                                </li>
+                                <li class="requirement-item" id="req-uppercase">
+                                    <i class="bi bi-circle"></i> <span>One uppercase letter</span>
+                                </li>
+                                <li class="requirement-item" id="req-lowercase">
+                                    <i class="bi bi-circle"></i> <span>One lowercase letter</span>
+                                </li>
+                                <li class="requirement-item" id="req-number">
+                                    <i class="bi bi-circle"></i> <span>One number</span>
+                                </li>
+                                <li class="requirement-item" id="req-symbol">
+                                    <i class="bi bi-circle"></i> <span>One symbol</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-custom">
@@ -277,6 +297,56 @@
         color: #6b7280;
     }
     
+    .password-requirements {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .password-requirements-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: #6b7280;
+        transition: color 0.2s ease;
+    }
+    
+    .requirement-item i {
+        font-size: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .requirement-item.valid {
+        color: #10b981;
+    }
+    
+    .requirement-item.valid i {
+        color: #10b981;
+    }
+    
+    
+    .form-control-custom.is-valid {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+    
+    .form-control-custom.is-valid:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
     .form-actions {
         display: flex;
         gap: 0.75rem;
@@ -333,6 +403,91 @@
         }
     }
     
+    function validatePassword(password) {
+        const requirements = {
+            length: password.length >= 12,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+        };
+        
+        // Update requirement indicators
+        const updateRequirement = (id, isValid) => {
+            const item = document.getElementById(id);
+            if (item) {
+                const icon = item.querySelector('i');
+                if (isValid) {
+                    item.classList.add('valid');
+                    icon.classList.remove('bi-circle');
+                    icon.classList.add('bi-check-circle');
+                } else {
+                    item.classList.remove('valid');
+                    icon.classList.remove('bi-check-circle');
+                    icon.classList.add('bi-circle');
+                }
+            }
+        };
+        
+        const reqContainer = document.getElementById('passwordRequirements');
+        if (reqContainer) {
+            updateRequirement('req-length', requirements.length);
+            updateRequirement('req-uppercase', requirements.uppercase);
+            updateRequirement('req-lowercase', requirements.lowercase);
+            updateRequirement('req-number', requirements.number);
+            updateRequirement('req-symbol', requirements.symbol);
+        }
+        
+        return Object.values(requirements).every(req => req === true);
+    }
+    
+    document.getElementById('password')?.addEventListener('input', function() {
+        const password = this.value;
+        const reqContainer = document.getElementById('passwordRequirements');
+        
+        if (password.length > 0) {
+            reqContainer.style.display = 'block';
+            const isValid = validatePassword(password);
+            
+            if (isValid) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else {
+            reqContainer.style.display = 'none';
+            this.classList.remove('is-invalid', 'is-valid');
+            // Reset all requirements
+            if (reqContainer) {
+                document.querySelectorAll('.requirement-item').forEach(item => {
+                    item.classList.remove('valid');
+                    const icon = item.querySelector('i');
+                    icon.classList.remove('bi-check-circle');
+                    icon.classList.add('bi-circle');
+                });
+            }
+        }
+    });
+    
+    document.getElementById('password_confirmation')?.addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmation = this.value;
+        
+        if (confirmation.length > 0) {
+            if (password === confirmation && password.length > 0) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else {
+            this.classList.remove('is-invalid', 'is-valid');
+        }
+    });
+    
     document.getElementById('userForm')?.addEventListener('submit', function(e) {
         const form = this;
         const submitBtn = form.querySelector('.btn-submit');
@@ -343,18 +498,19 @@
         
         // Only validate if password fields are filled
         if (password || passwordConfirmation) {
+            // Validate password strength if password is provided
+            if (password.length > 0 && !validatePassword(password)) {
+                e.preventDefault();
+                alert('Password does not meet all requirements. Please ensure your password has at least 12 characters, including uppercase, lowercase, numbers, and symbols.');
+                document.getElementById('password').focus();
+                return false;
+            }
+            
             if (password !== passwordConfirmation) {
                 e.preventDefault();
                 alert('Passwords do not match. Please try again.');
                 document.getElementById('password_confirmation').classList.add('is-invalid');
                 return false;
-            }
-            
-            if (password.length > 0 && password.length < 8) {
-                if (!confirm('Password is less than 8 characters. Do you want to continue?')) {
-                    e.preventDefault();
-                    return false;
-                }
             }
         }
         
