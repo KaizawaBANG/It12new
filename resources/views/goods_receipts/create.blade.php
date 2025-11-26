@@ -152,13 +152,56 @@
     </div>
 </div>
 @else
-<div class="alert alert-info-modern">
-    <div class="alert-icon">
-        <i class="bi bi-info-circle"></i>
-    </div>
-    <div class="alert-content">
-        <strong>No Purchase Order Selected</strong>
-        <p class="mb-0">Please select a purchase order to create a goods receipt from.</p>
+<div class="form-card">
+    <div class="form-card-body">
+        <div class="alert alert-info-modern mb-4">
+            <div class="alert-icon">
+                <i class="bi bi-info-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Select Purchase Order</strong>
+                <p class="mb-0">Please select a purchase order to create a goods receipt from.</p>
+            </div>
+        </div>
+
+        @if($purchaseOrders && $purchaseOrders->count() > 0)
+        <div class="po-selector-section">
+            <h5 class="form-section-title mb-3">
+                <span class="section-number">1</span>
+                <span><i class="bi bi-cart-check"></i> Available Purchase Orders</span>
+            </h5>
+            <div class="po-list">
+                @foreach($purchaseOrders as $po)
+                <div class="po-card-item" onclick="selectPurchaseOrder({{ $po->id }})">
+                    <div class="po-item-header">
+                        <div class="po-item-info">
+                            <span class="po-number">{{ $po->po_number }}</span>
+                            <span class="po-supplier">{{ $po->supplier->name }}</span>
+                        </div>
+                        <div class="po-item-actions">
+                            <span class="po-date">{{ $po->po_date->format('M d, Y') }}</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                    <div class="po-item-details">
+                        <span class="po-amount">₱{{ number_format($po->total_amount, 2) }}</span>
+                        <span class="po-items">{{ $po->items->count() }} item(s)</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @else
+        <div class="alert alert-warning-modern">
+            <div class="alert-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>No Purchase Orders Available</strong>
+                <p class="mb-0">There are no approved purchase orders available for goods receipt. Please ensure you have approved purchase orders first.</p>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endif
@@ -401,6 +444,118 @@
         color: #1e40af;
         margin: 0;
     }
+    
+    .po-selector-section {
+        margin-top: 1rem;
+    }
+    
+    .po-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .po-card-item {
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .po-card-item:hover {
+        border-color: #2563eb;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .po-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .po-item-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .po-number {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #111827;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .po-supplier {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .po-item-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .po-date {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .po-item-actions i {
+        color: #9ca3af;
+        font-size: 1.25rem;
+    }
+    
+    .po-item-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .po-amount {
+        font-weight: 600;
+        font-size: 1.125rem;
+        color: #2563eb;
+    }
+    
+    .po-items {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .alert-warning-modern {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: start;
+        gap: 1rem;
+    }
+    
+    .alert-warning-modern .alert-icon {
+        font-size: 1.5rem;
+        color: #f59e0b;
+        flex-shrink: 0;
+    }
+    
+    .alert-warning-modern .alert-content strong {
+        display: block;
+        color: #92400e;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-warning-modern .alert-content p {
+        color: #92400e;
+        margin: 0;
+    }
 </style>
 @endpush
 
@@ -481,6 +636,10 @@
             }
         });
     });
+    
+    function selectPurchaseOrder(poId) {
+        window.location.href = '{{ route("goods-receipts.create") }}?purchase_order_id=' + poId;
+    }
 </script>
 @endpush
 @endsection

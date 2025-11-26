@@ -37,10 +37,19 @@ class GoodsReceiptController extends Controller
     public function create(Request $request)
     {
         $purchaseOrder = null;
+        $purchaseOrders = null;
+        
         if ($request->has('purchase_order_id')) {
             $purchaseOrder = PurchaseOrder::with(['items.inventoryItem', 'supplier'])->findOrFail($request->purchase_order_id);
+        } else {
+            // Get approved purchase orders that haven't been fully received
+            $purchaseOrders = PurchaseOrder::with(['supplier', 'items'])
+                ->where('status', 'approved')
+                ->orderBy('po_date', 'desc')
+                ->get();
         }
-        return view('goods_receipts.create', compact('purchaseOrder'));
+        
+        return view('goods_receipts.create', compact('purchaseOrder', 'purchaseOrders'));
     }
 
     public function store(Request $request)
@@ -86,6 +95,9 @@ class GoodsReceiptController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Reload with relationships needed for stock processing
+        $goodsReceipt->load(['items.purchaseOrderItem']);
 
         $this->stockService->processGoodsReceipt($goodsReceipt);
 

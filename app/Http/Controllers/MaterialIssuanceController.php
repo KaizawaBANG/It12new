@@ -108,6 +108,9 @@ class MaterialIssuanceController extends Controller
             'issued_at' => now(),
         ]);
 
+        // Reload with relationships needed for stock processing
+        $materialIssuance->load(['items']);
+
         $this->stockService->processMaterialIssuance($materialIssuance);
 
         return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Materials issued and stock updated.');

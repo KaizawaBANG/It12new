@@ -9,7 +9,7 @@
         <p class="text-muted mb-0">{{ $purchaseOrder->po_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if($purchaseOrder->status === 'pending')
+        @if(in_array($purchaseOrder->status, ['draft', 'pending']))
             <form method="POST" action="{{ route('purchase-orders.approve', $purchaseOrder) }}" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-success">

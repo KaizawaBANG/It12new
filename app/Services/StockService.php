@@ -59,17 +59,30 @@ class StockService
     public function processGoodsReceipt(GoodsReceipt $gr): void
     {
         DB::transaction(function () use ($gr) {
+            // Refresh to ensure we have the latest status
+            $gr->refresh();
+            
             if ($gr->status !== 'approved') {
                 return;
             }
 
+            // Ensure items and purchaseOrderItem relationships are loaded
+            if (!$gr->relationLoaded('items')) {
+                $gr->load('items.purchaseOrderItem');
+            }
+
             foreach ($gr->items as $item) {
                 if ($item->quantity_accepted > 0) {
+                    // Ensure purchaseOrderItem is loaded
+                    if (!$item->relationLoaded('purchaseOrderItem')) {
+                        $item->load('purchaseOrderItem');
+                    }
+                    
                     $this->recordStockMovement(
                         $item->inventory_item_id,
                         'stock_in',
                         $item->quantity_accepted,
-                        $item->purchaseOrderItem->unit_price,
+                        $item->purchaseOrderItem->unit_price ?? 0,
                         GoodsReceipt::class,
                         $gr->id,
                         "Goods Receipt: {$gr->gr_number}"
@@ -82,8 +95,16 @@ class StockService
     public function processMaterialIssuance(MaterialIssuance $issuance): void
     {
         DB::transaction(function () use ($issuance) {
+            // Refresh to ensure we have the latest status
+            $issuance->refresh();
+            
             if ($issuance->status !== 'issued') {
                 return;
+            }
+
+            // Ensure items relationship is loaded
+            if (!$issuance->relationLoaded('items')) {
+                $issuance->load('items');
             }
 
             foreach ($issuance->items as $item) {
@@ -91,7 +112,7 @@ class StockService
                     $item->inventory_item_id,
                     'stock_out',
                     $item->quantity,
-                    $item->unit_cost,
+                    $item->unit_cost ?? 0,
                     MaterialIssuance::class,
                     $issuance->id,
                     "Material Issuance: {$issuance->issuance_number}"

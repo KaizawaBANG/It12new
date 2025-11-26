@@ -44,6 +44,14 @@
                                     <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="View">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    @if(in_array($po->status, ['draft', 'pending']))
+                                    <form method="POST" action="{{ route('purchase-orders.approve', $po) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to approve this purchase order?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-action btn-approve" title="Approve">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    @endif
                                     <a href="{{ route('purchase-orders.print', $po) }}" class="btn btn-sm btn-action btn-print" title="Print">
                                         <i class="bi bi-printer"></i>
                                     </a>
@@ -148,6 +156,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(55, 65, 81, 0.3);
+    }
+    
+    .btn-approve {
+        background: #d1fae5;
+        color: #10b981;
+    }
+    
+    .btn-approve:hover {
+        background: #10b981;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
     }
     
     .badge-success {

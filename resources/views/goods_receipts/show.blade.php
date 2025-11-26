@@ -9,7 +9,7 @@
         <p class="text-muted mb-0">{{ $goodsReceipt->gr_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if($goodsReceipt->status === 'pending')
+        @if(in_array($goodsReceipt->status, ['draft', 'pending']))
             <form method="POST" action="{{ route('goods-receipts.approve', $goodsReceipt) }}" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-success">
@@ -136,20 +136,20 @@
                 <h5 class="quick-actions-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
             </div>
             <div class="quick-actions-body">
-                @if($goodsReceipt->status === 'pending')
-                <div class="quick-action-info">
-                    <i class="bi bi-info-circle"></i>
-                    <div>
-                        <strong>Pending Approval</strong>
-                        <p class="mb-0">Approve this receipt to update inventory stock levels.</p>
-                    </div>
-                </div>
-                @else
+                @if($goodsReceipt->status === 'approved')
                 <div class="quick-action-success">
                     <i class="bi bi-check-circle"></i>
                     <div>
                         <strong>Approved</strong>
                         <p class="mb-0">Stock levels have been updated.</p>
+                    </div>
+                </div>
+                @else
+                <div class="quick-action-info">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Pending Approval</strong>
+                        <p class="mb-0">Approve this receipt to update inventory stock levels.</p>
                     </div>
                 </div>
                 @endif

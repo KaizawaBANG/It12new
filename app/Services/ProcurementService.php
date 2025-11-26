@@ -7,6 +7,7 @@ use App\Models\Quotation;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProcurementService
 {
@@ -63,7 +64,13 @@ class ProcurementService
     public function createPurchaseOrderFromQuotation(Quotation $quotation, array $additionalData = []): PurchaseOrder
     {
         return DB::transaction(function () use ($quotation, $additionalData) {
+            // Generate unique PO number
+            do {
+                $poNumber = 'PO-' . strtoupper(Str::random(8));
+            } while (PurchaseOrder::where('po_number', $poNumber)->exists());
+
             $po = PurchaseOrder::create([
+                'po_number' => $poNumber,
                 'purchase_request_id' => $quotation->purchase_request_id,
                 'quotation_id' => $quotation->id,
                 'supplier_id' => $quotation->supplier_id,

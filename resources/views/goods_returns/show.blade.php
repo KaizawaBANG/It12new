@@ -9,7 +9,7 @@
         <p class="text-muted mb-0">{{ $goodsReturn->return_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if($goodsReturn->status === 'pending')
+        @if(in_array($goodsReturn->status, ['draft', 'pending']))
             <form method="POST" action="{{ route('goods-returns.approve', $goodsReturn) }}" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-success">
@@ -38,7 +38,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $goodsReturn->status === 'approved' ? 'success' : ($goodsReturn->status === 'pending' ? 'primary' : 'warning') }}">
+                            <span class="badge badge-{{ $goodsReturn->status === 'approved' ? 'success' : (in_array($goodsReturn->status, ['draft', 'pending']) ? 'warning' : 'warning') }}">
                                 {{ ucfirst($goodsReturn->status) }}
                             </span>
                         </span>
@@ -111,20 +111,20 @@
                 <h5 class="quick-actions-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
             </div>
             <div class="quick-actions-body">
-                @if($goodsReturn->status === 'pending')
-                <div class="quick-action-info">
-                    <i class="bi bi-info-circle"></i>
-                    <div>
-                        <strong>Pending Approval</strong>
-                        <p class="mb-0">Approve this return to update inventory stock levels.</p>
-                    </div>
-                </div>
-                @else
+                @if($goodsReturn->status === 'approved')
                 <div class="quick-action-success">
                     <i class="bi bi-check-circle"></i>
                     <div>
                         <strong>Approved</strong>
                         <p class="mb-0">Stock levels have been updated.</p>
+                    </div>
+                </div>
+                @else
+                <div class="quick-action-info">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Pending Approval</strong>
+                        <p class="mb-0">Approve this return to update inventory stock levels.</p>
                     </div>
                 </div>
                 @endif
