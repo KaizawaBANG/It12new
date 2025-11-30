@@ -3,7 +3,7 @@
 @section('title', 'Projects')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-folder"></i> Projects</h1>
         <p class="text-muted mb-0">Manage and track all your construction projects</p>
@@ -46,7 +46,6 @@
                         <th>Start Date</th>
                         <th>End Date</th>
                         <th>Status</th>
-                        <th>Budget</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -55,12 +54,21 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $project->project_code }}</span></td>
                             <td>
-                                <div class="fw-semibold">{{ $project->name }}</div>
+                                <div class="fw-semibold text-truncate" style="max-width: 300px;" title="{{ $project->name }}">{{ $project->name }}</div>
                                 @if($project->description)
-                                    <small class="text-muted">{{ Str::limit($project->description, 40) }}</small>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 300px;" title="{{ $project->description }}">{{ Str::limit($project->description, 50) }}</small>
                                 @endif
                             </td>
-                            <td>{{ $project->projectManager->name ?? '<span class="text-muted">N/A</span>' }}</td>
+                            <td>
+                                @if($project->projectManager)
+                                    <div class="fw-semibold">{{ $project->projectManager->name }}</div>
+                                    @if($project->projectManager->role)
+                                        <small class="text-muted">{{ $project->projectManager->role->name }}</small>
+                                    @endif
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted">{{ $project->start_date->format('M d, Y') }}</span></td>
                             <td><span class="text-muted">{{ $project->end_date->format('M d, Y') }}</span></td>
                             <td>
@@ -68,7 +76,6 @@
                                     {{ ucfirst(str_replace('_', ' ', $project->status)) }}
                                 </span>
                             </td>
-                            <td><strong>₱{{ number_format($project->budget, 2) }}</strong></td>
                             <td>
                                 <div class="action-buttons">
                                     <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-action btn-view" title="View">

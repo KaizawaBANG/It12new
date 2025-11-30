@@ -3,7 +3,7 @@
 @section('title', 'Quotations')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> Quotations</h1>
         <p class="text-muted mb-0">Manage supplier quotations and pricing</p>
@@ -18,10 +18,11 @@
                 <thead>
                     <tr>
                         <th>Quotation Number</th>
+                        <th>Project Code</th>
                         <th>Purchase Request</th>
-                        <th>Supplier</th>
+                        <th>Suppliers</th>
                         <th>Date</th>
-                        <th>Total Amount</th>
+                        <th>Total Quantity</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -31,25 +32,70 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
                             <td>
-                                <div class="fw-semibold">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</div>
+                                @if($quotation->project_code)
+                                    <span class="badge badge-info font-monospace">{{ $quotation->project_code }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
                             </td>
-                            <td>{{ $quotation->supplier->name }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</div>
+                                @php
+                                    $prQuotationCount = \App\Models\Quotation::where('purchase_request_id', $quotation->purchase_request_id)
+                                        ->whereIn('status', ['pending', 'accepted'])
+                                        ->count();
+                                @endphp
+                                @if($prQuotationCount >= 2)
+                                <small>
+                                    <a href="{{ route('quotations.compare', ['purchase_request_id' => $quotation->purchase_request_id]) }}" class="text-success">
+                                        <i class="bi bi-bar-chart"></i> Compare ({{ $prQuotationCount }})
+                                    </a>
+                                </small>
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                    $suppliers = $quotation->items->pluck('supplier')->filter()->unique('id');
+                                @endphp
+                                @if($suppliers->count() > 0)
+                                    @foreach($suppliers->take(2) as $supplier)
+                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
+                                    @endforeach
+                                    @if($suppliers->count() > 2)
+                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted">{{ $quotation->quotation_date->format('M d, Y') }}</span></td>
-                            <td><strong>₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
+                            <td>
+                                <strong>{{ number_format($quotation->items->sum('quantity'), 2) }}</strong>
+                                <small class="text-muted">units</small>
+                            </td>
                             <td>
                                 <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($quotation->status) }}
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form action="{{ route('quotations.destroy', $quotation) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this quotation? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-file-earmark-x"></i>
                                     <p class="mt-3 mb-0">No quotations found</p>
@@ -130,6 +176,18 @@
         box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
     }
     
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+    }
+    
     .badge-success {
         background: #10b981;
         color: #ffffff;
@@ -155,6 +213,19 @@
         border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
+    }
+    
+    .badge-info {
+        background: #3b82f6;
+        color: #ffffff;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .text-warning {
+        color: #f59e0b;
     }
     
     .empty-state {

@@ -56,8 +56,69 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
-        $supplier->load(['purchaseOrders', 'quotations']);
-        return view('suppliers.show', compact('supplier'));
+        $supplier->load(['purchaseOrders', 'quotations', 'prices.inventoryItem']);
+        $inventoryItems = \App\Models\InventoryItem::where('status', 'active')->orderBy('name')->get();
+        return view('suppliers.show', compact('supplier', 'inventoryItems'));
+    }
+
+    public function storePrice(Request $request, Supplier $supplier)
+    {
+        $validated = $request->validate([
+            'inventory_item_id' => 'required|exists:inventory_items,id',
+            'unit_price' => 'required|numeric|min:0',
+            'effective_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after:effective_date',
+            'notes' => 'nullable|string',
+        ]);
+
+        \App\Models\SupplierPrice::updateOrCreate(
+            [
+                'supplier_id' => $supplier->id,
+                'inventory_item_id' => $validated['inventory_item_id'],
+            ],
+            [
+                'unit_price' => $validated['unit_price'],
+                'effective_date' => $validated['effective_date'] ?? now(),
+                'expiry_date' => $validated['expiry_date'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Supplier price updated successfully.');
+    }
+
+    public function updatePrice(Request $request, Supplier $supplier, $priceId)
+    {
+        $price = \App\Models\SupplierPrice::where('supplier_id', $supplier->id)
+            ->where('id', $priceId)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'unit_price' => 'required|numeric|min:0',
+            'effective_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after:effective_date',
+            'notes' => 'nullable|string',
+        ]);
+
+        $price->update([
+            'unit_price' => $validated['unit_price'],
+            'effective_date' => $validated['effective_date'] ?? $price->effective_date,
+            'expiry_date' => $validated['expiry_date'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->back()->with('success', 'Supplier price updated successfully.');
+    }
+
+    public function deletePrice(Supplier $supplier, $priceId)
+    {
+        $price = \App\Models\SupplierPrice::where('supplier_id', $supplier->id)
+            ->where('id', $priceId)
+            ->firstOrFail();
+        
+        $price->delete();
+
+        return redirect()->back()->with('success', 'Supplier price deleted successfully.');
     }
 
     public function edit(Supplier $supplier)

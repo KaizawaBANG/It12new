@@ -3,7 +3,7 @@
 @section('title', 'Goods Return Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-up"></i> Goods Return</h1>
         <p class="text-muted mb-0">{{ $goodsReturn->return_number }}</p>
@@ -17,6 +17,13 @@
                 </button>
             </form>
         @endif
+        <form action="{{ route('goods-returns.destroy', $goodsReturn) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this goods return? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('goods-returns.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
@@ -36,6 +43,16 @@
                         <span class="info-value font-monospace">{{ $goodsReturn->return_number }}</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">Project Code</span>
+                        <span class="info-value">
+                            @if($goodsReturn->project_code)
+                                <span class="badge badge-info font-monospace">{{ $goodsReturn->project_code }}</span>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
                             <span class="badge badge-{{ $goodsReturn->status === 'approved' ? 'success' : (in_array($goodsReturn->status, ['draft', 'pending']) ? 'warning' : 'warning') }}">
@@ -49,7 +66,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Return Date</span>
-                        <span class="info-value">{{ $goodsReturn->return_date->format('M d, Y') }}</span>
+                        <span class="info-value">{{ $goodsReturn->return_date ? $goodsReturn->return_date->format('M d, Y') : 'N/A' }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Returned By</span>
@@ -142,7 +159,7 @@
                 </div>
                 <div class="related-item">
                     <span class="related-label">Receipt Date</span>
-                    <span class="related-value">{{ $goodsReturn->goodsReceipt->receipt_date->format('M d, Y') }}</span>
+                    <span class="related-value">{{ $goodsReturn->goodsReceipt->gr_date ? $goodsReturn->goodsReceipt->gr_date->format('M d, Y') : 'N/A' }}</span>
                 </div>
                 <a href="{{ route('goods-receipts.show', $goodsReturn->goodsReceipt) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
                     <i class="bi bi-eye"></i> View Goods Receipt

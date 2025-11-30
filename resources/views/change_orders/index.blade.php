@@ -3,7 +3,7 @@
 @section('title', 'Add Additional Project')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-plus-circle"></i> Add Additional Project</h1>
         <p class="text-muted mb-0">Manage additional project changes and modifications</p>
@@ -48,9 +48,18 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('change-orders.show', $co) }}" class="btn btn-sm btn-action btn-view" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('change-orders.show', $co) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form action="{{ route('change-orders.destroy', $co) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this change order? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -170,6 +179,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
     
     .empty-state {

@@ -3,7 +3,7 @@
 @section('title', 'Create Goods Return')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-up"></i> Create Goods Return</h1>
         <p class="text-muted mb-0">Return goods from a goods receipt</p>
@@ -62,12 +62,36 @@
                     <span class="section-number">2</span>
                     <span><i class="bi bi-list-ul"></i> Items to Return</span>
                 </h5>
+                <div class="alert alert-info-modern mb-3">
+                    <div class="alert-icon">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Select Items to Return</strong>
+                        <p class="mb-0">Enter return quantities only for items you want to return. Leave quantity as 0 to skip items. At least one item with quantity greater than 0 is required.</p>
+                    </div>
+                </div>
                 <div id="items-container">
-                    @foreach($goodsReceipt->items as $index => $grItem)
+                    @php
+                        $itemIndex = 0;
+                    @endphp
+                    @foreach($goodsReceipt->items as $grItem)
+                        @php
+                            $returnData = $itemReturnData[$grItem->id] ?? [
+                                'accepted' => $grItem->quantity_accepted,
+                                'already_returned' => 0,
+                                'available' => $grItem->quantity_accepted,
+                            ];
+                            $available = $returnData['available'];
+                        @endphp
+                        @if($available > 0)
                         <div class="item-row-modern mb-3">
                             <div class="item-row-header">
-                                <span class="item-number">Item {{ $index + 1 }}</span>
-                                <span class="item-badge">Max: {{ number_format($grItem->quantity_accepted, 2) }}</span>
+                                <span class="item-number">Item {{ $itemIndex + 1 }}</span>
+                                <span class="item-badge">Available: {{ number_format($available, 2) }}</span>
+                                @if($returnData['already_returned'] > 0)
+                                    <span class="item-badge text-warning">Already Returned: {{ number_format($returnData['already_returned'], 2) }}</span>
+                                @endif
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-5">
@@ -75,8 +99,8 @@
                                         <i class="bi bi-box"></i> Item
                                     </label>
                                     <input type="text" class="form-control-custom" value="{{ $grItem->inventoryItem->name }} ({{ $grItem->inventoryItem->item_code }})" readonly>
-                                    <input type="hidden" name="items[{{ $index }}][goods_receipt_item_id]" value="{{ $grItem->id }}">
-                                    <input type="hidden" name="items[{{ $index }}][inventory_item_id]" value="{{ $grItem->inventory_item_id }}">
+                                    <input type="hidden" name="items[{{ $itemIndex }}][goods_receipt_item_id]" value="{{ $grItem->id }}">
+                                    <input type="hidden" name="items[{{ $itemIndex }}][inventory_item_id]" value="{{ $grItem->inventory_item_id }}">
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label-custom">
@@ -86,24 +110,38 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label-custom">
-                                        <i class="bi bi-123"></i> Return Qty <span class="text-danger">*</span>
+                                        <i class="bi bi-123"></i> Return Qty
                                     </label>
-                                    <input type="number" step="0.01" min="0" max="{{ $grItem->quantity_accepted }}" name="items[{{ $index }}][quantity]" class="form-control-custom @error('items.'.$index.'.quantity') is-invalid @enderror" placeholder="0.00" required>
-                                    @error('items.'.$index.'.quantity')
+                                    <input type="number" step="0.01" min="0" max="{{ $available }}" name="items[{{ $itemIndex }}][quantity]" class="form-control-custom @error('items.'.$itemIndex.'.quantity') is-invalid @enderror" placeholder="0.00" value="{{ old('items.'.$itemIndex.'.quantity', 0) }}">
+                                    @error('items.'.$itemIndex.'.quantity')
                                         <div class="invalid-feedback-custom">
                                             <i class="bi bi-exclamation-circle"></i> {{ $message }}
                                         </div>
                                     @enderror
+                                    <small class="form-help-text">Leave 0 to skip. Max: {{ number_format($available, 2) }}</small>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label-custom">
                                         <i class="bi bi-chat-left-text"></i> Item Reason
                                     </label>
-                                    <input type="text" name="items[{{ $index }}][reason]" class="form-control-custom" value="{{ old('items.'.$index.'.reason') }}" placeholder="Reason for this item">
+                                    <input type="text" name="items[{{ $itemIndex }}][reason]" class="form-control-custom" value="{{ old('items.'.$itemIndex.'.reason') }}" placeholder="Reason for this item">
                                 </div>
                             </div>
                         </div>
+                        @php $itemIndex++; @endphp
+                        @endif
                     @endforeach
+                    @if($itemIndex === 0)
+                        <div class="alert alert-warning-modern">
+                            <div class="alert-icon">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <strong>No Items Available for Return</strong>
+                                <p class="mb-0">All items from this goods receipt have already been returned.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
             
@@ -135,13 +173,63 @@
     </div>
 </div>
 @else
-<div class="alert alert-info-modern">
-    <div class="alert-icon">
-        <i class="bi bi-info-circle"></i>
-    </div>
-    <div class="alert-content">
-        <strong>No Goods Receipt Selected</strong>
-        <p class="mb-0">Please select a goods receipt to create a return from.</p>
+<div class="form-card">
+    <div class="form-card-body">
+        <div class="alert alert-info-modern mb-4">
+            <div class="alert-icon">
+                <i class="bi bi-info-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Select a Goods Receipt</strong>
+                <p class="mb-0">Please select an approved goods receipt to create a return from.</p>
+            </div>
+        </div>
+        
+        @if($approvedGoodsReceipts->count() > 0)
+        <div class="goods-receipts-list">
+            <h5 class="mb-3"><i class="bi bi-list-ul"></i> Approved Goods Receipts</h5>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>GR Number</th>
+                            <th>Purchase Order</th>
+                            <th>Supplier</th>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($approvedGoodsReceipts as $gr)
+                            <tr>
+                                <td><span class="font-monospace">{{ $gr->gr_number }}</span></td>
+                                <td><span class="font-monospace">{{ $gr->purchaseOrder->po_number }}</span></td>
+                                <td>{{ $gr->purchaseOrder->supplier->name }}</td>
+                                <td>{{ $gr->gr_date ? $gr->gr_date->format('M d, Y') : 'N/A' }}</td>
+                                <td><span class="badge badge-info">{{ $gr->items->count() }} items</span></td>
+                                <td>
+                                    <a href="{{ route('goods-returns.create', ['goods_receipt_id' => $gr->id]) }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right-circle"></i> Select
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @else
+        <div class="alert alert-warning-modern">
+            <div class="alert-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>No Approved Goods Receipts</strong>
+                <p class="mb-0">There are no approved goods receipts available for returns. Please approve a goods receipt first.</p>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endif
@@ -364,10 +452,24 @@
         gap: 1rem;
     }
     
+    .alert-warning-modern {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: start;
+        gap: 1rem;
+    }
+    
     .alert-icon {
         font-size: 1.5rem;
         color: #2563eb;
         flex-shrink: 0;
+    }
+    
+    .alert-warning-modern .alert-icon {
+        color: #f59e0b;
     }
     
     .alert-content {
@@ -380,9 +482,23 @@
         margin-bottom: 0.5rem;
     }
     
+    .alert-warning-modern .alert-content strong {
+        color: #92400e;
+    }
+    
     .alert-content p {
         color: #1e40af;
         margin: 0;
+    }
+    
+    .alert-warning-modern .alert-content p {
+        color: #92400e;
+    }
+    
+    .item-badge.text-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
     }
 </style>
 @endpush
@@ -398,26 +514,44 @@
         const quantityInputs = form.querySelectorAll('input[name*="[quantity]"]');
         let isValid = true;
         
+        let hasAtLeastOneItem = false;
+        
         quantityInputs.forEach(input => {
             const max = parseFloat(input.getAttribute('max'));
-            const value = parseFloat(input.value);
+            const value = parseFloat(input.value) || 0;
             
-            if (value > max) {
-                isValid = false;
-                input.classList.add('is-invalid');
-                input.setCustomValidity(`Return quantity cannot exceed ${max}`);
-            } else if (value <= 0) {
-                isValid = false;
-                input.classList.add('is-invalid');
-                input.setCustomValidity('Return quantity must be greater than 0');
+            // Only validate items with quantity > 0
+            if (value > 0) {
+                hasAtLeastOneItem = true;
+                
+                if (value > max) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                    input.setCustomValidity(`Return quantity cannot exceed ${max}`);
+                } else if (value < 0) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                    input.setCustomValidity('Return quantity cannot be negative');
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.setCustomValidity('');
+                }
             } else {
+                // Clear validation for items with 0 quantity
+                input.classList.remove('is-invalid');
                 input.setCustomValidity('');
             }
         });
         
+        if (!hasAtLeastOneItem) {
+            e.preventDefault();
+            alert('Please enter at least one item with a return quantity greater than 0.');
+            return false;
+        }
+        
         if (!isValid) {
             e.preventDefault();
-            alert('Please check return quantities. They cannot exceed accepted quantities and must be greater than 0.');
+            alert('Please check return quantities. They cannot exceed available quantities.');
             return false;
         }
         
@@ -436,15 +570,22 @@
     document.querySelectorAll('input[name*="[quantity]"]').forEach(input => {
         input.addEventListener('input', function() {
             const max = parseFloat(this.getAttribute('max'));
-            const value = parseFloat(this.value);
+            const value = parseFloat(this.value) || 0;
             
-            if (value > max) {
-                this.classList.add('is-invalid');
-                this.setCustomValidity(`Cannot exceed ${max}`);
-            } else if (value <= 0 && this.value !== '') {
-                this.classList.add('is-invalid');
-                this.setCustomValidity('Must be greater than 0');
+            // Only validate if value > 0
+            if (value > 0) {
+                if (value > max) {
+                    this.classList.add('is-invalid');
+                    this.setCustomValidity(`Cannot exceed ${max}`);
+                } else if (value < 0) {
+                    this.classList.add('is-invalid');
+                    this.setCustomValidity('Cannot be negative');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.setCustomValidity('');
+                }
             } else {
+                // Clear validation for 0 or empty values
                 this.classList.remove('is-invalid');
                 this.setCustomValidity('');
             }

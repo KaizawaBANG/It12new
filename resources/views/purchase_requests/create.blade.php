@@ -3,7 +3,7 @@
 @section('title', 'Create Purchase Request')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-plus"></i> Create Purchase Request</h1>
         <p class="text-muted mb-0">Request materials or items for your project</p>
@@ -16,17 +16,32 @@
         <form method="POST" action="{{ route('purchase-requests.store') }}" id="prForm">
             @csrf
             
-            @if(request('project_id'))
-                <input type="hidden" name="project_id" value="{{ request('project_id') }}">
-            @endif
-            
             <div class="form-section">
                 <h5 class="form-section-title">
                     <span class="section-number">1</span>
                     <span><i class="bi bi-info-circle"></i> Request Information</span>
                 </h5>
                 <div class="row g-3">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="bi bi-folder"></i> Project
+                        </label>
+                        <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror">
+                            <option value="">Select Project (Optional)</option>
+                            @foreach($projects as $proj)
+                                <option value="{{ $proj->id }}" {{ (request('project_id') == $proj->id || old('project_id') == $proj->id) ? 'selected' : '' }}>
+                                    {{ $proj->name }} ({{ $proj->project_code }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('project_id')
+                            <div class="invalid-feedback-custom">
+                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                            </div>
+                        @enderror
+                        <small class="form-help-text">Associate this purchase request with a project (optional)</small>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label-custom">
                             <i class="bi bi-card-text"></i> Purpose
                         </label>

@@ -19,7 +19,7 @@ class GoodsReceiptController extends Controller
 
     public function index(Request $request)
     {
-        $query = GoodsReceipt::with(['purchaseOrder.supplier', 'receivedBy', 'approvedBy']);
+        $query = GoodsReceipt::with(['purchaseOrder.items.supplier', 'receivedBy', 'approvedBy']);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -73,6 +73,14 @@ class GoodsReceiptController extends Controller
         $validated['status'] = 'draft';
         $validated['received_by'] = auth()->id();
 
+        // Get project_code from purchase_order
+        $purchaseOrder = PurchaseOrder::findOrFail($validated['purchase_order_id']);
+        if ($purchaseOrder->project_code) {
+            $validated['project_code'] = $purchaseOrder->project_code;
+        } elseif ($purchaseOrder->purchaseRequest && $purchaseOrder->purchaseRequest->project) {
+            $validated['project_code'] = $purchaseOrder->purchaseRequest->project->project_code;
+        }
+
         $gr = GoodsReceipt::create($validated);
 
         foreach ($validated['items'] as $item) {
@@ -84,7 +92,7 @@ class GoodsReceiptController extends Controller
 
     public function show(GoodsReceipt $goodsReceipt)
     {
-        $goodsReceipt->load(['purchaseOrder.supplier', 'items.purchaseOrderItem', 'items.inventoryItem', 'receivedBy', 'approvedBy']);
+        $goodsReceipt->load(['purchaseOrder', 'items.purchaseOrderItem.supplier', 'items.inventoryItem', 'receivedBy', 'approvedBy']);
         return view('goods_receipts.show', compact('goodsReceipt'));
     }
 
@@ -102,6 +110,23 @@ class GoodsReceiptController extends Controller
         $this->stockService->processGoodsReceipt($goodsReceipt);
 
         return redirect()->route('goods-receipts.show', $goodsReceipt)->with('success', 'Goods receipt approved and stock updated.');
+    }
+
+    public function destroy(GoodsReceipt $goodsReceipt)
+    {
+        // Check if goods receipt is approved (stock already updated)
+        if ($goodsReceipt->status === 'approved') {
+            return redirect()->back()->with('error', 'Cannot delete approved goods receipt. Stock has already been updated.');
+        }
+
+        // Check if goods receipt has returns
+        if ($goodsReceipt->goodsReturns()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete goods receipt that has associated returns.');
+        }
+
+        $goodsReceipt->delete();
+
+        return redirect()->route('goods-receipts.index')->with('success', 'Goods receipt deleted successfully.');
     }
 }
 

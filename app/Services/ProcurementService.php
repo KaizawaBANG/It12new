@@ -46,6 +46,22 @@ class ProcurementService
             $items = $data['items'] ?? [];
             unset($data['items']);
 
+            // Generate unique quotation number
+            do {
+                $quotationNumber = 'QT-' . strtoupper(Str::random(8));
+            } while (Quotation::where('quotation_number', $quotationNumber)->exists());
+
+            $data['quotation_number'] = $quotationNumber;
+            $data['status'] = 'pending';
+
+            // Get project_code from purchase_request
+            if (isset($data['purchase_request_id'])) {
+                $purchaseRequest = PurchaseRequest::with('project')->find($data['purchase_request_id']);
+                if ($purchaseRequest && $purchaseRequest->project) {
+                    $data['project_code'] = $purchaseRequest->project->project_code;
+                }
+            }
+
             $quotation = Quotation::create($data);
 
             $totalAmount = 0;
@@ -69,11 +85,18 @@ class ProcurementService
                 $poNumber = 'PO-' . strtoupper(Str::random(8));
             } while (PurchaseOrder::where('po_number', $poNumber)->exists());
 
+            // Get project_code from quotation
+            $projectCode = $quotation->project_code;
+            if (!$projectCode && $quotation->purchaseRequest && $quotation->purchaseRequest->project) {
+                $projectCode = $quotation->purchaseRequest->project->project_code;
+            }
+
             $po = PurchaseOrder::create([
                 'po_number' => $poNumber,
+                'project_code' => $projectCode,
                 'purchase_request_id' => $quotation->purchase_request_id,
                 'quotation_id' => $quotation->id,
-                'supplier_id' => $quotation->supplier_id,
+                'supplier_id' => null, // No single supplier - suppliers are per item
                 'po_date' => now(),
                 'expected_delivery_date' => $additionalData['expected_delivery_date'] ?? null,
                 'status' => 'draft',
@@ -87,6 +110,7 @@ class ProcurementService
             foreach ($quotation->items as $quotationItem) {
                 $poItem = PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
+                    'supplier_id' => $quotationItem->supplier_id, // Copy supplier from quotation item
                     'inventory_item_id' => $quotationItem->inventory_item_id,
                     'quantity' => $quotationItem->quantity,
                     'unit_price' => $quotationItem->unit_price,

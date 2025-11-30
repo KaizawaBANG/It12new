@@ -3,7 +3,7 @@
 @section('title', 'Create Project')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-folder-plus"></i> Create Project</h1>
         <p class="text-muted mb-0">Add a new construction project to the system</p>
@@ -27,7 +27,7 @@
                             <i class="bi bi-folder"></i> Project Name <span class="text-danger">*</span>
                         </label>
                         <div class="input-wrapper">
-                            <input type="text" name="name" class="form-control-custom @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="Enter project name" required>
+                            <input type="text" name="name" class="form-control-custom @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="e.g., Building Construction - Phase 1" maxlength="255" required>
                             <i class="bi bi-check-circle-fill input-success-icon"></i>
                         </div>
                         @error('name')
@@ -35,7 +35,7 @@
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Enter a descriptive name for your project</small>
+                        <small class="form-help-text">Enter a clear and descriptive project name (max 255 characters)</small>
                     </div>
                 </div>
             </div>
@@ -83,26 +83,27 @@
             <div class="form-section">
                 <h5 class="form-section-title">
                     <span class="section-number">3</span>
-                    <span><i class="bi bi-cash-stack"></i> Budget</span>
+                    <span><i class="bi bi-person-badge"></i> Project Manager</span>
                 </h5>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label-custom">
-                            <i class="bi bi-cash-stack"></i> Budget <span class="text-danger">*</span>
+                            <i class="bi bi-person-badge"></i> Project Manager
                         </label>
-                        <div class="input-wrapper">
-                            <div class="input-group-custom">
-                                <span class="input-group-text-custom">₱</span>
-                                <input type="number" step="0.01" min="0" name="budget" class="form-control-custom @error('budget') is-invalid @enderror" value="{{ old('budget') }}" placeholder="0.00" required>
-                            </div>
-                            <i class="bi bi-check-circle-fill input-success-icon"></i>
-                        </div>
-                        @error('budget')
+                        <select name="project_manager_id" class="form-control-custom @error('project_manager_id') is-invalid @enderror">
+                            <option value="">Select Project Manager (Optional)</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}" {{ old('project_manager_id') == $user->id ? 'selected' : '' }}>
+                                    {{ $user->name }}@if($user->role) - {{ $user->role->name }}@endif
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('project_manager_id')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Total project budget in Philippine Peso</small>
+                        <small class="form-help-text">Select the project manager responsible for this project</small>
                     </div>
                 </div>
             </div>
@@ -117,16 +118,18 @@
                         <label class="form-label-custom">
                             <i class="bi bi-card-text"></i> Description
                         </label>
-                        <textarea name="description" class="form-control-custom textarea-custom" rows="4" placeholder="Enter project description">{{ old('description') }}</textarea>
-                        <small class="form-help-text">Provide a detailed description of the project</small>
+                        <textarea name="description" class="form-control-custom textarea-custom" rows="5" placeholder="Describe the project scope, objectives, and key details..." maxlength="2000">{{ old('description') }}</textarea>
+                        <small class="form-help-text">Provide a detailed description of the project scope and objectives (max 2000 characters)</small>
+                        <div class="char-counter"><span class="char-count">0</span>/2000</div>
                     </div>
                     
                     <div class="col-md-12">
                         <label class="form-label-custom">
                             <i class="bi bi-sticky"></i> Notes
                         </label>
-                        <textarea name="notes" class="form-control-custom textarea-custom" rows="3" placeholder="Enter any additional notes">{{ old('notes') }}</textarea>
-                        <small class="form-help-text">Any additional notes or remarks</small>
+                        <textarea name="notes" class="form-control-custom textarea-custom" rows="4" placeholder="Add any important notes, reminders, or special instructions..." maxlength="1000">{{ old('notes') }}</textarea>
+                        <small class="form-help-text">Add any important notes, reminders, or special instructions (max 1000 characters)</small>
+                        <div class="char-counter"><span class="char-count">0</span>/1000</div>
                     </div>
                 </div>
             </div>
@@ -241,7 +244,22 @@
     
     .textarea-custom {
         resize: vertical;
-        min-height: 100px;
+        min-height: 120px;
+        max-height: 300px;
+        font-family: inherit;
+        line-height: 1.6;
+    }
+    
+    .char-counter {
+        text-align: right;
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .char-counter .char-count {
+        font-weight: 600;
+        color: #374151;
     }
     
     .input-icon-right {
@@ -582,20 +600,42 @@
         });
     }
     
-    // Budget validation - ensure it's positive
-    const budgetField = document.querySelector('input[name="budget"]');
-    if (budgetField) {
-        budgetField.addEventListener('input', function() {
-            if (this.value && parseFloat(this.value) < 0) {
-                this.setCustomValidity('Budget must be a positive number');
-                this.classList.add('is-invalid');
-            } else {
-                this.setCustomValidity('');
-                if (this.value && parseFloat(this.value) >= 0) {
-                    this.classList.remove('is-invalid');
-                }
-            }
-        });
+    // Character counter for textareas
+    const descriptionField = document.querySelector('textarea[name="description"]');
+    const notesField = document.querySelector('textarea[name="notes"]');
+    
+    function updateCharCounter(textarea, counter) {
+        const count = textarea.value.length;
+        const maxLength = parseInt(textarea.getAttribute('maxlength'));
+        counter.querySelector('.char-count').textContent = count;
+        
+        if (count > maxLength * 0.9) {
+            counter.style.color = '#ef4444';
+        } else if (count > maxLength * 0.75) {
+            counter.style.color = '#f59e0b';
+        } else {
+            counter.style.color = '#6b7280';
+        }
+    }
+    
+    if (descriptionField) {
+        const counter = descriptionField.parentElement.querySelector('.char-counter');
+        if (counter) {
+            updateCharCounter(descriptionField, counter);
+            descriptionField.addEventListener('input', function() {
+                updateCharCounter(this, counter);
+            });
+        }
+    }
+    
+    if (notesField) {
+        const counter = notesField.parentElement.querySelector('.char-counter');
+        if (counter) {
+            updateCharCounter(notesField, counter);
+            notesField.addEventListener('input', function() {
+                updateCharCounter(this, counter);
+            });
+        }
     }
 </script>
 @endpush

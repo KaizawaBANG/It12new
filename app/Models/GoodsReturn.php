@@ -12,6 +12,7 @@ class GoodsReturn extends Model
 
     protected $fillable = [
         'return_number',
+        'project_code',
         'goods_receipt_id',
         'return_date',
         'status',

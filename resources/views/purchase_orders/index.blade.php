@@ -3,7 +3,7 @@
 @section('title', 'Purchase Orders')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-cart-check"></i> Purchase Orders</h1>
         <p class="text-muted mb-0">Manage and track all purchase orders</p>
@@ -18,7 +18,8 @@
                 <thead>
                     <tr>
                         <th>PO Number</th>
-                        <th>Supplier</th>
+                        <th>Project Code</th>
+                        <th>Suppliers</th>
                         <th>Date</th>
                         <th>Total Amount</th>
                         <th>Status</th>
@@ -30,7 +31,26 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
                             <td>
-                                <div class="fw-semibold">{{ $po->supplier->name }}</div>
+                                @if($po->project_code)
+                                    <span class="badge badge-info font-monospace">{{ $po->project_code }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                    $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
+                                @endphp
+                                @if($suppliers->count() > 0)
+                                    @foreach($suppliers->take(2) as $supplier)
+                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
+                                    @endforeach
+                                    @if($suppliers->count() > 2)
+                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
                             </td>
                             <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
                             <td><strong>₱{{ number_format($po->total_amount, 2) }}</strong></td>
@@ -55,6 +75,13 @@
                                     <a href="{{ route('purchase-orders.print', $po) }}" class="btn btn-sm btn-action btn-print" title="Print">
                                         <i class="bi bi-printer"></i>
                                     </a>
+                                    <form action="{{ route('purchase-orders.destroy', $po) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this purchase order? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -156,6 +183,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(55, 65, 81, 0.3);
+    }
+    
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
     
     .btn-approve {

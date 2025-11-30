@@ -3,7 +3,7 @@
 @section('title', 'Purchase Requests')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-text"></i> Purchase Requests</h1>
         <p class="text-muted mb-0">Manage and track all purchase requests</p>
@@ -40,9 +40,40 @@
                             </td>
                             <td><span class="text-muted">{{ $pr->created_at->format('M d, Y') }}</span></td>
                             <td>
-                                <a href="{{ route('purchase-requests.show', $pr) }}" class="btn btn-sm btn-action btn-view" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('purchase-requests.show', $pr) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if($pr->status === 'submitted')
+                                        <form method="POST" action="{{ route('purchase-requests.approve', $pr) }}" class="d-inline" onsubmit="return confirm('Approve this purchase request?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-action" style="background: #10b981; color: #ffffff;" title="Approve">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if($pr->status === 'draft')
+                                        <form method="POST" action="{{ route('purchase-requests.submit', $pr) }}" class="d-inline" onsubmit="return confirm('Submit this purchase request for approval?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-action" style="background: #2563eb; color: #ffffff;" title="Submit">
+                                                <i class="bi bi-send"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('purchase-requests.approve', $pr) }}" class="d-inline" onsubmit="return confirm('Approve this purchase request directly?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-action" style="background: #10b981; color: #ffffff;" title="Approve Directly">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form action="{{ route('purchase-requests.destroy', $pr) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this purchase request? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -126,6 +157,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
     
     .badge-success {

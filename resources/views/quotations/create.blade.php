@@ -3,7 +3,7 @@
 @section('title', 'Create Quotation')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> Create Quotation</h1>
         <p class="text-muted mb-0">Create a quotation from a purchase request</p>
@@ -41,24 +41,7 @@
                         @enderror
                         <small class="form-help-text">Select an approved purchase request</small>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">
-                            <i class="bi bi-truck"></i> Supplier <span class="text-danger">*</span>
-                        </label>
-                        <select name="supplier_id" class="form-control-custom @error('supplier_id') is-invalid @enderror" required>
-                            <option value="">Select Supplier</option>
-                            @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>{{ $supplier->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('supplier_id')
-                            <div class="invalid-feedback-custom">
-                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-                            </div>
-                        @enderror
-                        <small class="form-help-text">Select the supplier for this quotation</small>
-                    </div>
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label class="form-label-custom">
                             <i class="bi bi-calendar-event"></i> Quotation Date <span class="text-danger">*</span>
                         </label>
@@ -97,12 +80,23 @@
                                     <span class="item-number">Item {{ $index + 1 }}</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-md-5">
+                                    <div class="col-md-4">
                                         <label class="form-label-custom">
                                             <i class="bi bi-box"></i> Item
                                         </label>
                                         <input type="text" class="form-control-custom" value="{{ $prItem->inventoryItem->name }} ({{ $prItem->inventoryItem->item_code }})" readonly>
                                         <input type="hidden" name="items[{{ $index }}][inventory_item_id]" value="{{ $prItem->inventory_item_id }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label-custom">
+                                            <i class="bi bi-truck"></i> Supplier <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="items[{{ $index }}][supplier_id]" class="form-control-custom item-supplier-select" required>
+                                            <option value="">Select Supplier</option>
+                                            @foreach($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label-custom">
@@ -110,20 +104,17 @@
                                         </label>
                                         <input type="number" step="0.01" min="0" name="items[{{ $index }}][quantity]" class="form-control-custom" value="{{ $prItem->quantity }}" required>
                                     </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label-custom">
-                                            <i class="bi bi-cash-stack"></i> Unit Price <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group-custom">
-                                            <span class="input-group-text-custom">₱</span>
-                                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price]" class="form-control-custom @error('items.'.$index.'.unit_price') is-invalid @enderror" placeholder="0.00" required>
+                                    {{-- Unit price hidden field - kept for backend processing but not displayed --}}
+                                    <input type="hidden" name="items[{{ $index }}][unit_price]" 
+                                        id="unit-price-{{ $prItem->inventory_item_id }}" 
+                                        class="unit-price-input @error('items.'.$index.'.unit_price') is-invalid @enderror" 
+                                        data-item-id="{{ $prItem->inventory_item_id }}"
+                                        value="0">
+                                    @error('items.'.$index.'.unit_price')
+                                        <div class="invalid-feedback-custom">
+                                            <i class="bi bi-exclamation-circle"></i> {{ $message }}
                                         </div>
-                                        @error('items.'.$index.'.unit_price')
-                                            <div class="invalid-feedback-custom">
-                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-                                            </div>
-                                        @enderror
-                                    </div>
+                                    @enderror
                                     <div class="col-md-3">
                                         <label class="form-label-custom">
                                             <i class="bi bi-file-text"></i> Specifications
@@ -285,32 +276,6 @@
         min-height: 100px;
     }
     
-    .input-group-custom {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
-    
-    .input-group-text-custom {
-        padding: 0.875rem 0.875rem 0.875rem 1rem;
-        background: #f9fafb;
-        border: 1.5px solid #e5e7eb;
-        border-right: none;
-        border-radius: 10px 0 0 10px;
-        color: #374151;
-        font-weight: 700;
-        font-size: 1rem;
-    }
-    
-    .input-group-custom .form-control-custom {
-        border-left: none;
-        border-radius: 0 10px 10px 0;
-    }
-    
-    .input-group-custom .form-control-custom:focus {
-        border-left: 1.5px solid #2563eb;
-    }
-    
     .invalid-feedback-custom {
         display: flex;
         align-items: center;
@@ -432,9 +397,82 @@
 
 @push('scripts')
 <script>
+    const purchaseRequestId = @json($purchaseRequest ? $purchaseRequest->id : null);
+    
     document.getElementById('pr-select').addEventListener('change', function() {
         if (this.value) {
             window.location.href = '{{ route("quotations.create") }}?purchase_request_id=' + this.value;
+        }
+    });
+    
+    // Function to load supplier prices
+    function loadSupplierPrices() {
+        const supplierId = document.getElementById('supplier-select').value;
+        const prId = purchaseRequestId || document.getElementById('pr-select').value;
+        
+        if (!supplierId || !prId) {
+            return;
+        }
+        
+        // Prices are loaded in the background (hidden fields)
+        
+        // Fetch supplier prices
+        fetch(`{{ route('api.supplier-prices') }}?supplier_id=${supplierId}&purchase_request_id=${prId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Populate prices (hidden fields for backend processing)
+                Object.keys(data).forEach(itemId => {
+                    const priceData = data[itemId];
+                    const input = document.getElementById(`unit-price-${itemId}`);
+                    
+                    if (input) {
+                        if (priceData.has_price && priceData.unit_price) {
+                            // Set the hidden unit price field for backend calculation
+                            input.value = parseFloat(priceData.unit_price).toFixed(2);
+                        } else {
+                            // Default to 0 if no price available
+                            input.value = '0';
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching supplier prices:', error);
+                // Prices are loaded in background, error is logged but form can still be submitted
+            });
+    }
+    
+    // Auto-populate prices when supplier is selected
+    document.getElementById('supplier-select').addEventListener('change', function() {
+        loadSupplierPrices();
+    });
+    
+    // Also load prices when PR is selected (if supplier is already selected)
+    const prSelect = document.getElementById('pr-select');
+    if (prSelect) {
+        prSelect.addEventListener('change', function() {
+            const supplierId = document.getElementById('supplier-select').value;
+            if (supplierId && this.value) {
+                // Wait a moment for page to reload if redirecting
+                setTimeout(() => {
+                    if (document.getElementById('supplier-select').value === supplierId) {
+                        loadSupplierPrices();
+                    }
+                }, 100);
+            }
+        });
+    }
+    
+    // If supplier is already selected on page load, trigger the change event
+    document.addEventListener('DOMContentLoaded', function() {
+        const supplierSelect = document.getElementById('supplier-select');
+        if (supplierSelect && supplierSelect.value && purchaseRequestId) {
+            loadSupplierPrices();
         }
     });
     

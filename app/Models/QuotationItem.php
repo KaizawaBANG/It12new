@@ -11,12 +11,18 @@ class QuotationItem extends Model
 
     protected $fillable = [
         'quotation_id',
+        'supplier_id',
         'inventory_item_id',
         'quantity',
         'unit_price',
         'total_price',
         'specifications',
     ];
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
     protected function casts(): array
     {

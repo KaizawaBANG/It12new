@@ -68,5 +68,10 @@ class InventoryItem extends Model
     {
         return $this->hasMany(MaterialIssuanceItem::class);
     }
+
+    public function supplierPrices()
+    {
+        return $this->hasMany(SupplierPrice::class);
+    }
 }
 

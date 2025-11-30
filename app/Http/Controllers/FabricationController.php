@@ -103,5 +103,17 @@ class FabricationController extends Controller
         ]);
         return redirect()->route('fabrication.show', $fabricationJob)->with('success', 'Fabrication job completed.');
     }
+
+    public function destroy(FabricationJob $fabricationJob)
+    {
+        // Check if fabrication job has material issuances
+        if ($fabricationJob->materialIssuances()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete fabrication job that has associated material issuances.');
+        }
+
+        $fabricationJob->delete();
+
+        return redirect()->route('fabrication.index')->with('success', 'Fabrication job deleted successfully.');
+    }
 }
 

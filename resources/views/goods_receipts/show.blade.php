@@ -3,7 +3,7 @@
 @section('title', 'Goods Receipt Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-in-down"></i> Goods Receipt</h1>
         <p class="text-muted mb-0">{{ $goodsReceipt->gr_number }}</p>
@@ -17,6 +17,13 @@
                 </button>
             </form>
         @endif
+        <form action="{{ route('goods-receipts.destroy', $goodsReceipt) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this goods receipt? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
@@ -36,6 +43,16 @@
                         <span class="info-value font-monospace">{{ $goodsReceipt->gr_number }}</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">Project Code</span>
+                        <span class="info-value">
+                            @if($goodsReceipt->project_code)
+                                <span class="badge badge-info font-monospace">{{ $goodsReceipt->project_code }}</span>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
                             <span class="badge badge-{{ $goodsReceipt->status === 'approved' ? 'success' : ($goodsReceipt->status === 'pending' ? 'primary' : 'warning') }}">
@@ -46,10 +63,6 @@
                     <div class="info-item">
                         <span class="info-label">Purchase Order</span>
                         <span class="info-value font-monospace">{{ $goodsReceipt->purchaseOrder->po_number }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Supplier</span>
-                        <span class="info-value">{{ $goodsReceipt->purchaseOrder->supplier->name }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">GR Date</span>
@@ -86,6 +99,7 @@
                         <thead>
                             <tr>
                                 <th>Item</th>
+                                <th>Supplier</th>
                                 <th>Ordered</th>
                                 <th>Received</th>
                                 <th>Accepted</th>
@@ -99,6 +113,13 @@
                                     <td>
                                         <div class="fw-semibold">{{ $item->inventoryItem->name }}</div>
                                         <small class="text-muted font-monospace">{{ $item->inventoryItem->item_code ?? '' }}</small>
+                                    </td>
+                                    <td>
+                                        @if($item->purchaseOrderItem && $item->purchaseOrderItem->supplier)
+                                            <span class="badge badge-info">{{ $item->purchaseOrderItem->supplier->name }}</span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <span class="fw-semibold">{{ number_format($item->quantity_ordered, 2) }}</span>

@@ -20,7 +20,10 @@ class PurchaseOrderController extends Controller
 
     public function index(Request $request)
     {
-        $query = PurchaseOrder::with(['supplier', 'purchaseRequest']);
+        $query = PurchaseOrder::with(['purchaseRequest', 'items.supplier'])
+            ->whereDoesntHave('goodsReceipts', function ($q) {
+                $q->where('status', 'approved'); // Exclude POs that have approved goods receipts
+            });
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -39,7 +42,7 @@ class PurchaseOrderController extends Controller
     {
         $quotation = null;
         if ($request->has('quotation_id')) {
-            $quotation = Quotation::with(['items.inventoryItem', 'purchaseRequest'])->findOrFail($request->quotation_id);
+            $quotation = Quotation::with(['items.inventoryItem', 'items.supplier', 'purchaseRequest'])->findOrFail($request->quotation_id);
         }
         return view('purchase_orders.create', compact('quotation'));
     }
@@ -61,7 +64,7 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['supplier', 'purchaseRequest', 'quotation', 'items.inventoryItem', 'createdBy', 'approvedBy']);
+        $purchaseOrder->load(['purchaseRequest', 'quotation', 'items.inventoryItem', 'items.supplier', 'createdBy', 'approvedBy']);
         return view('purchase_orders.show', compact('purchaseOrder'));
     }
 
@@ -73,9 +76,21 @@ class PurchaseOrderController extends Controller
 
     public function print(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['supplier', 'items.inventoryItem', 'createdBy', 'approvedBy']);
+        $purchaseOrder->load(['items.inventoryItem', 'items.supplier', 'createdBy', 'approvedBy']);
         $pdf = Pdf::loadView('purchase_orders.print', compact('purchaseOrder'));
         return $pdf->download("PO-{$purchaseOrder->po_number}.pdf");
+    }
+
+    public function destroy(PurchaseOrder $purchaseOrder)
+    {
+        // Check if PO has approved goods receipts
+        if ($purchaseOrder->goodsReceipts()->where('status', 'approved')->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete purchase order that has approved goods receipts.');
+        }
+
+        $purchaseOrder->delete();
+
+        return redirect()->route('purchase-orders.index')->with('success', 'Purchase order deleted successfully.');
     }
 }
 

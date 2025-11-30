@@ -86,5 +86,17 @@ class ChangeOrderController extends Controller
 
         return redirect()->route('change-orders.show', $changeOrder)->with('success', 'Change order rejected.');
     }
+
+    public function destroy(ChangeOrder $changeOrder)
+    {
+        // Check if change order is approved
+        if ($changeOrder->status === 'approved') {
+            return redirect()->back()->with('error', 'Cannot delete approved change order.');
+        }
+
+        $changeOrder->delete();
+
+        return redirect()->route('change-orders.index')->with('success', 'Change order deleted successfully.');
+    }
 }
 

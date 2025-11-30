@@ -9,8 +9,8 @@
         request()->routeIs('material-issuance.*');
 @endphp
 
-<nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-    <div class="position-sticky pt-3 d-flex flex-column h-100">
+<nav id="sidebar" class="sidebar collapse d-md-block">
+    <div class="sidebar-inner pt-3 d-flex flex-column h-100">
         <div class="text-center text-white mb-4">
             <div class="sidebar-logo p-3 rounded-4 shadow-sm mx-auto">
                 <img src="{{ asset('images/davao.png') }}" alt="Davao Modern Glass" class="img-fluid sidebar-logo-img">
@@ -146,22 +146,67 @@
 
 <style>
 .sidebar {
-    min-height: 100vh;
-    padding-top: 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 320px;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 65%, #0f172a 100%);
     color: #e2e8f0;
     box-shadow: 4px 0 24px rgba(15, 23, 42, 0.45);
+    z-index: 1050;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
-.sidebar .position-sticky {
-    top: 0;
+
+/* Custom scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        width: 320px;
+    }
+}
+
+@media (min-width: 992px) {
+    .sidebar {
+        width: 320px;
+    }
+}
+
+.sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 1.5rem 1rem 1rem 1rem;
+    flex: 1;
 }
 .nav-link {
     color: #cbd5f5;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1.25rem;
     border-radius: 12px;
     transition: all 0.2s ease;
     font-weight: 500;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.9375rem;
 }
 .nav-link-group {
     width: 100%;
@@ -183,8 +228,8 @@
     margin-top: 0.35rem;
 }
 .sub-nav .nav-link {
-    font-size: 0.9rem;
-    padding: 0.6rem 1rem 0.6rem 2.2rem;
+    font-size: 0.875rem;
+    padding: 0.7rem 1.25rem 0.7rem 2.5rem;
     border-radius: 10px;
     color: #e2e8f0;
 }
@@ -192,8 +237,10 @@
     font-size: 0.9rem;
 }
 .nav-link i {
-    margin-right: 0.5rem;
-    font-size: 1rem;
+    margin-right: 0.75rem;
+    font-size: 1.125rem;
+    width: 20px;
+    text-align: center;
 }
 .nav-link:hover {
     color: #ffffff;
@@ -229,8 +276,8 @@
 }
 
 .sidebar-logo {
-    width: 110px;
-    height: 110px;
+    width: 120px;
+    height: 120px;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 20px;
@@ -255,7 +302,7 @@
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.4);
 }
 .sidebar-logo-img {
-    max-width: 90px;
+    max-width: 100px;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
 }
 </style>

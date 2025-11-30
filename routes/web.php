@@ -28,9 +28,19 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
         'password' => 'required',
     ]);
 
-    if (\Illuminate\Support\Facades\Auth::attempt($credentials)) {
-        $request->session()->regenerate();
-        return redirect()->intended('/');
+    try {
+        if (\Illuminate\Support\Facades\Auth::attempt($credentials, $request->filled('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended('/');
+        }
+    } catch (\Exception $e) {
+        // Log the error for debugging
+        \Log::error('Login attempt failed: ' . $e->getMessage());
+        
+        // Check if it's a database/session issue
+        if (str_contains($e->getMessage(), 'sessions') || str_contains($e->getMessage(), 'table')) {
+            return back()->withErrors(['email' => 'Session storage error. Please run: php artisan migrate and php artisan config:clear']);
+        }
     }
 
     return back()->withErrors(['email' => 'Invalid credentials']);
@@ -62,6 +72,9 @@ Route::post('purchase-requests/{purchaseRequest}/submit', [MaterialRequisitionCo
 // Quotations
 Route::resource('quotations', QuotationController::class);
 Route::get('quotations/compare', [QuotationController::class, 'compare'])->name('quotations.compare');
+Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
+Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
+Route::get('api/supplier-prices', [QuotationController::class, 'getSupplierPrices'])->name('api.supplier-prices');
 
 // Purchase Orders
 Route::resource('purchase-orders', PurchaseOrderController::class);
@@ -96,10 +109,12 @@ Route::get('reports/inventory-movement', [ReportsController::class, 'inventoryMo
 Route::get('reports/purchase-history', [ReportsController::class, 'purchaseHistory'])->name('reports.purchase-history');
 Route::get('reports/project-consumption', [ReportsController::class, 'projectConsumption'])->name('reports.project-consumption');
 Route::get('reports/supplier-performance', [ReportsController::class, 'supplierPerformance'])->name('reports.supplier-performance');
-Route::get('reports/delayed-projects', [ReportsController::class, 'delayedProjects'])->name('reports.delayed-projects');
 
 // Suppliers
 Route::resource('suppliers', SupplierController::class);
+Route::post('suppliers/{supplier}/prices', [SupplierController::class, 'storePrice'])->name('suppliers.prices.store');
+Route::put('suppliers/{supplier}/prices/{priceId}', [SupplierController::class, 'updatePrice'])->name('suppliers.prices.update');
+Route::delete('suppliers/{supplier}/prices/{priceId}', [SupplierController::class, 'deletePrice'])->name('suppliers.prices.delete');
 
 // Users
 Route::resource('users', UserController::class);

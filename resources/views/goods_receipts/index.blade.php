@@ -3,7 +3,7 @@
 @section('title', 'Goods Receipts')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-in-down"></i> Goods Receipts</h1>
         <p class="text-muted mb-0">Track received goods from purchase orders</p>
@@ -18,8 +18,9 @@
                 <thead>
                     <tr>
                         <th>GR Number</th>
+                        <th>Project Code</th>
                         <th>Purchase Order</th>
-                        <th>Supplier</th>
+                        <th>Suppliers</th>
                         <th>Date</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -30,9 +31,30 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $gr->gr_number }}</span></td>
                             <td>
+                                @if($gr->project_code)
+                                    <span class="badge badge-info font-monospace">{{ $gr->project_code }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="fw-semibold font-monospace">{{ $gr->purchaseOrder->po_number }}</div>
                             </td>
-                            <td>{{ $gr->purchaseOrder->supplier->name }}</td>
+                            <td>
+                                @php
+                                    $suppliers = $gr->purchaseOrder->items->pluck('supplier')->filter()->unique('id');
+                                @endphp
+                                @if($suppliers->count() > 0)
+                                    @foreach($suppliers->take(2) as $supplier)
+                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
+                                    @endforeach
+                                    @if($suppliers->count() > 2)
+                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted">{{ $gr->gr_date->format('M d, Y') }}</span></td>
                             <td>
                                 <span class="badge badge-{{ $gr->status === 'approved' ? 'success' : ($gr->status === 'pending' ? 'primary' : 'warning') }}">
@@ -40,14 +62,23 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('goods-receipts.show', $gr) }}" class="btn btn-sm btn-action btn-view" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('goods-receipts.show', $gr) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form action="{{ route('goods-receipts.destroy', $gr) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this goods receipt? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-box-arrow-in-down"></i>
                                     <p class="mt-3 mb-0">No goods receipts found</p>
@@ -126,6 +157,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
     
     .badge-success {

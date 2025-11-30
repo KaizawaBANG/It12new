@@ -115,5 +115,17 @@ class MaterialIssuanceController extends Controller
 
         return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Materials issued and stock updated.');
     }
+
+    public function destroy(MaterialIssuance $materialIssuance)
+    {
+        // Check if material issuance is issued (stock already updated)
+        if ($materialIssuance->status === 'issued') {
+            return redirect()->back()->with('error', 'Cannot delete issued material issuance. Stock has already been updated.');
+        }
+
+        $materialIssuance->delete();
+
+        return redirect()->route('material-issuance.index')->with('success', 'Material issuance deleted successfully.');
+    }
 }
 

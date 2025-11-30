@@ -3,7 +3,7 @@
 @section('title', 'Goods Issue Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-right"></i> Goods Issue</h1>
         <p class="text-muted mb-0">{{ $materialIssuance->issuance_number }}</p>
@@ -25,6 +25,13 @@
                 </button>
             </form>
         @endif
+        <form action="{{ route('material-issuance.destroy', $materialIssuance) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this material issuance? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('material-issuance.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>

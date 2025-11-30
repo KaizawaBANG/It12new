@@ -3,7 +3,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-speedometer2"></i> Dashboard</h1>
         <p class="text-muted mb-0">Welcome back! Here's what's happening with your business today.</p>
@@ -11,7 +11,7 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-md-3 mb-3">
         <div class="stat-card stat-card-primary">
             <div class="stat-card-body">
@@ -82,7 +82,7 @@
 </div>
 
 <!-- Charts Row -->
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-md-6 mb-3">
         <div class="chart-card">
             <div class="chart-card-header">
@@ -103,6 +103,60 @@
             </div>
             <div class="chart-card-body">
                 <canvas id="poStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trend Charts Row -->
+<div class="row mb-2">
+    <div class="col-md-6 mb-3">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title">Monthly Purchase Orders Trend</h5>
+                <i class="bi bi-graph-up-arrow chart-icon"></i>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="monthlyPOChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title">Monthly Projects Trend</h5>
+                <i class="bi bi-graph-up chart-icon"></i>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="monthlyProjectsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Charts Row -->
+<div class="row mb-2">
+    <div class="col-md-6 mb-3">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title">Inventory Movements (Last 30 Days)</h5>
+                <i class="bi bi-arrow-left-right chart-icon"></i>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="inventoryMovementChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title">Top Suppliers by Orders</h5>
+                <i class="bi bi-trophy chart-icon"></i>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="topSuppliersChart"></canvas>
             </div>
         </div>
     </div>
@@ -325,8 +379,16 @@
     
     .chart-card-body {
         padding: 1.5rem;
-        height: 300px;
+        height: 320px;
         position: relative;
+    }
+    
+    .chart-card-header {
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+    }
+    
+    .chart-card:hover .chart-card-header {
+        background: linear-gradient(135deg, #f3f4f6 0%, #f9fafb 100%);
     }
     
     /* Activity Cards */
@@ -495,8 +557,24 @@
 
 @push('scripts')
 <script>
-    // Project Status Chart
+    // Helper function to create gradient
+    function createGradient(ctx, color1, color2) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(1, color2);
+        return gradient;
+    }
+
+    // Enhanced Project Status Chart with gradients
     const projectCtx = document.getElementById('projectStatusChart').getContext('2d');
+    const projectGradients = [
+        createGradient(projectCtx, 'rgba(37, 99, 235, 0.9)', 'rgba(37, 99, 235, 0.6)'),
+        createGradient(projectCtx, 'rgba(16, 185, 129, 0.9)', 'rgba(16, 185, 129, 0.6)'),
+        createGradient(projectCtx, 'rgba(245, 158, 11, 0.9)', 'rgba(245, 158, 11, 0.6)'),
+        createGradient(projectCtx, 'rgba(239, 68, 68, 0.9)', 'rgba(239, 68, 68, 0.6)'),
+        createGradient(projectCtx, 'rgba(107, 114, 128, 0.9)', 'rgba(107, 114, 128, 0.6)')
+    ];
+    
     new Chart(projectCtx, {
         type: 'doughnut',
         data: {
@@ -508,29 +586,42 @@
                     '#10b981',
                     '#f59e0b',
                     '#ef4444',
-                    '#6b7280'
+                    '#6b7280',
+                    '#8b5cf6',
+                    '#ec4899'
                 ],
-                borderWidth: 0,
-                hoverOffset: 8
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                hoverOffset: 12,
+                hoverBorderWidth: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
+                        padding: 20,
                         usePointStyle: true,
+                        pointStyle: 'circle',
                         font: {
-                            size: 12
-                        }
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#374151'
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
                     titleFont: {
                         size: 14,
                         weight: 'bold'
@@ -538,38 +629,63 @@
                     bodyFont: {
                         size: 13
                     },
-                    cornerRadius: 8
+                    cornerRadius: 10,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
                 }
             }
         }
     });
     
-    // PO Status Chart
+    // Enhanced PO Status Chart with gradient bars
     const poCtx = document.getElementById('poStatusChart').getContext('2d');
+    const poGradient = createGradient(poCtx, 'rgba(37, 99, 235, 0.9)', 'rgba(59, 130, 246, 0.6)');
+    const poLabels = {!! json_encode(array_keys($poStatusData->toArray())) !!};
+    const poData = {!! json_encode(array_values($poStatusData->toArray())) !!};
+    const poBarColors = poLabels.map((label) => {
+        const normalized = (label || '').toString().toLowerCase();
+        return normalized.includes('draft') ? '#9ca3af' : poGradient;
+    });
+    const poBorderColors = poLabels.map((label) => {
+        const normalized = (label || '').toString().toLowerCase();
+        return normalized.includes('draft') ? '#6b7280' : '#2563eb';
+    });
+    
     new Chart(poCtx, {
         type: 'bar',
         data: {
-            labels: {!! json_encode(array_keys($poStatusData->toArray())) !!},
+            labels: poLabels,
             datasets: [{
                 label: 'Purchase Orders',
-                data: {!! json_encode(array_values($poStatusData->toArray())) !!},
-                backgroundColor: 'rgba(37, 99, 235, 0.8)',
-                borderColor: '#2563eb',
+                data: poData,
+                backgroundColor: poBarColors,
+                borderColor: poBorderColors,
                 borderWidth: 2,
-                borderRadius: 8,
-                borderSkipped: false
+                borderRadius: 10,
+                borderSkipped: false,
+                barThickness: 50
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
             plugins: {
                 legend: {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
                     titleFont: {
                         size: 14,
                         weight: 'bold'
@@ -577,7 +693,291 @@
                     bodyFont: {
                         size: 13
                     },
-                    cornerRadius: 8
+                    cornerRadius: 10
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false,
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#6b7280',
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#6b7280'
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Purchase Orders Trend Line Chart
+    const monthlyPOCtx = document.getElementById('monthlyPOChart').getContext('2d');
+    const monthlyPOGradient = createGradient(monthlyPOCtx, 'rgba(16, 185, 129, 0.3)', 'rgba(16, 185, 129, 0.05)');
+    
+    const monthlyPOLabels = {!! json_encode(array_keys($monthlyPOs->toArray())) !!};
+    const monthlyPOData = {!! json_encode(array_values($monthlyPOs->toArray())) !!};
+    
+    new Chart(monthlyPOCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyPOLabels.map(month => {
+                const date = new Date(month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Purchase Orders',
+                data: monthlyPOData,
+                borderColor: '#10b981',
+                backgroundColor: monthlyPOGradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#059669',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    cornerRadius: 10,
+                    displayColors: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280',
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280'
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Projects Trend Line Chart
+    const monthlyProjectsCtx = document.getElementById('monthlyProjectsChart').getContext('2d');
+    const monthlyProjectsGradient = createGradient(monthlyProjectsCtx, 'rgba(37, 99, 235, 0.3)', 'rgba(37, 99, 235, 0.05)');
+    
+    const monthlyProjectsLabels = {!! json_encode(array_keys($monthlyProjects->toArray())) !!};
+    const monthlyProjectsData = {!! json_encode(array_values($monthlyProjects->toArray())) !!};
+    
+    new Chart(monthlyProjectsCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyProjectsLabels.map(month => {
+                const date = new Date(month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Projects',
+                data: monthlyProjectsData,
+                borderColor: '#2563eb',
+                backgroundColor: monthlyProjectsGradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#2563eb',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#1d4ed8',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    cornerRadius: 10,
+                    displayColors: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280',
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280'
+                    }
+                }
+            }
+        }
+    });
+
+    // Inventory Movements Chart
+    const inventoryCtx = document.getElementById('inventoryMovementChart').getContext('2d');
+    const inventoryData = {!! json_encode($inventoryMovements) !!};
+    
+    const inventoryDates = Object.keys(inventoryData);
+    const inData = inventoryDates.map(date => {
+        const dayData = inventoryData[date];
+        const inMovement = dayData.find(m => m.movement_type === 'in' || m.movement_type.includes('in'));
+        return inMovement ? parseFloat(inMovement.total) : 0;
+    });
+    const outData = inventoryDates.map(date => {
+        const dayData = inventoryData[date];
+        const outMovement = dayData.find(m => m.movement_type === 'out' || m.movement_type.includes('out'));
+        return outMovement ? parseFloat(outMovement.total) : 0;
+    });
+    
+    new Chart(inventoryCtx, {
+        type: 'bar',
+        data: {
+            labels: inventoryDates.map(date => {
+                const d = new Date(date);
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Stock In',
+                data: inData,
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderRadius: 6
+            }, {
+                label: 'Stock Out',
+                data: outData,
+                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#374151'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    cornerRadius: 10,
+                    mode: 'index',
+                    intersect: false
                 }
             },
             scales: {
@@ -595,6 +995,91 @@
                     }
                 },
                 x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280'
+                    }
+                }
+            }
+        }
+    });
+
+    // Top Suppliers Chart
+    const suppliersCtx = document.getElementById('topSuppliersChart').getContext('2d');
+    const suppliersData = {!! json_encode($topSuppliers) !!};
+    
+    const supplierNames = suppliersData.map(s => s.supplier ? s.supplier.name : 'Unknown');
+    const supplierOrders = suppliersData.map(s => s.order_count);
+    
+    const suppliersGradient = createGradient(suppliersCtx, 'rgba(245, 158, 11, 0.9)', 'rgba(245, 158, 11, 0.6)');
+    
+    new Chart(suppliersCtx, {
+        type: 'bar',
+        data: {
+            labels: supplierNames,
+            datasets: [{
+                label: 'Orders',
+                data: supplierOrders,
+                backgroundColor: suppliersGradient,
+                borderColor: '#f59e0b',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    cornerRadius: 10,
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const supplier = suppliersData[context.dataIndex];
+                            return 'Total: ₱' + parseFloat(supplier.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#6b7280',
+                        stepSize: 1
+                    }
+                },
+                y: {
                     grid: {
                         display: false,
                         drawBorder: false

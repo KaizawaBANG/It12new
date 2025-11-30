@@ -46,6 +46,48 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('count', 'status');
 
+        // Monthly Purchase Orders Trend (last 6 months)
+        $monthlyPOs = PurchaseOrder::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, count(*) as count')
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('count', 'month');
+
+        // Monthly Projects Trend (last 6 months)
+        $monthlyProjects = Project::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, count(*) as count')
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('count', 'month');
+
+        // Inventory Movements (last 30 days)
+        $inventoryMovementsRaw = \App\Models\StockMovement::selectRaw('DATE(created_at) as date, movement_type, SUM(quantity) as total')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('date', 'movement_type')
+            ->orderBy('date')
+            ->get();
+        
+        $inventoryMovements = [];
+        foreach ($inventoryMovementsRaw as $movement) {
+            $date = $movement->date;
+            if (!isset($inventoryMovements[$date])) {
+                $inventoryMovements[$date] = [];
+            }
+            $inventoryMovements[$date][] = [
+                'movement_type' => $movement->movement_type,
+                'total' => $movement->total
+            ];
+        }
+
+        // Top Suppliers by Purchase Orders
+        $topSuppliers = PurchaseOrder::selectRaw('supplier_id, count(*) as order_count, SUM(total_amount) as total_amount')
+            ->whereNotNull('supplier_id')
+            ->groupBy('supplier_id')
+            ->with('supplier')
+            ->orderByDesc('order_count')
+            ->take(5)
+            ->get();
+
         return view('dashboard', compact(
             'totalProjects',
             'activeProjects',
@@ -57,7 +99,11 @@ class DashboardController extends Controller
             'recentPOs',
             'recentFabricationJobs',
             'projectStatusData',
-            'poStatusData'
+            'poStatusData',
+            'monthlyPOs',
+            'monthlyProjects',
+            'inventoryMovements',
+            'topSuppliers'
         ));
     }
 }

@@ -3,7 +3,7 @@
 @section('title', 'Quotation Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> Quotation</h1>
         <p class="text-muted mb-0">{{ $quotation->quotation_number }}</p>
@@ -12,6 +12,13 @@
         <a href="{{ route('purchase-orders.create', ['quotation_id' => $quotation->id]) }}" class="btn btn-success">
             <i class="bi bi-cart-check"></i> Create Purchase Order
         </a>
+        <form action="{{ route('quotations.destroy', $quotation) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this quotation? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('quotations.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
@@ -31,6 +38,16 @@
                         <span class="info-value font-monospace">{{ $quotation->quotation_number }}</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">Project Code</span>
+                        <span class="info-value">
+                            @if($quotation->project_code)
+                                <span class="badge badge-info font-monospace">{{ $quotation->project_code }}</span>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
                             <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
@@ -43,10 +60,6 @@
                         <span class="info-value font-monospace">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Supplier</span>
-                        <span class="info-value">{{ $quotation->supplier->name }}</span>
-                    </div>
-                    <div class="info-item">
                         <span class="info-label">Quotation Date</span>
                         <span class="info-value">{{ $quotation->quotation_date->format('M d, Y') }}</span>
                     </div>
@@ -55,8 +68,8 @@
                         <span class="info-value">{{ $quotation->valid_until->format('M d, Y') }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Total Amount</span>
-                        <span class="info-value text-success fw-bold">₱{{ number_format($quotation->total_amount, 2) }}</span>
+                        <span class="info-label">Total Quantity</span>
+                        <span class="info-value fw-bold">{{ number_format($quotation->items->sum('quantity'), 2) }} units</span>
                     </div>
                     @if($quotation->terms_conditions)
                     <div class="info-item full-width">
@@ -85,9 +98,8 @@
                         <thead>
                             <tr>
                                 <th>Item</th>
+                                <th>Supplier</th>
                                 <th>Quantity</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -98,19 +110,24 @@
                                         <small class="text-muted font-monospace">{{ $item->inventoryItem->item_code ?? '' }}</small>
                                     </td>
                                     <td>
+                                        @if($item->supplier)
+                                            <span class="badge badge-info">{{ $item->supplier->name }}</span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>
                                         <span class="text-muted">{{ $item->inventoryItem->unit_of_measure }}</span>
                                     </td>
-                                    <td>₱{{ number_format($item->unit_price, 2) }}</td>
-                                    <td><strong class="text-success">₱{{ number_format($item->total_price, 2) }}</strong></td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr class="table-footer">
-                                <th colspan="2" class="text-end">Total Amount:</th>
-                                <th colspan="2" class="text-success">
-                                    ₱{{ number_format($quotation->total_amount, 2) }}
+                                <th class="text-end">Total Quantity:</th>
+                                <th>
+                                    {{ number_format($quotation->items->sum('quantity'), 2) }} units
                                 </th>
                             </tr>
                         </tfoot>

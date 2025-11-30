@@ -11,6 +11,7 @@ class PurchaseOrderItem extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'supplier_id',
         'inventory_item_id',
         'quantity',
         'unit_price',
@@ -18,6 +19,11 @@ class PurchaseOrderItem extends Model
         'received_quantity',
         'specifications',
     ];
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
     protected function casts(): array
     {

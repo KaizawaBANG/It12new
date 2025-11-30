@@ -46,16 +46,19 @@ class ReportsController extends Controller
 
     public function projectConsumption(Request $request)
     {
-        $request->validate(['project_id' => 'required|exists:projects,id']);
-        
         $filters = $request->only(['project_id', 'date_from', 'date_to']);
-        $data = $this->reportService->getProjectConsumptionReport($request->project_id, $filters);
+        $data = collect();
+        
+        if ($request->has('project_id') && $request->project_id) {
+            $data = $this->reportService->getProjectConsumptionReport($request->project_id, $filters);
+        }
 
-        if ($request->has('export')) {
+        if ($request->has('export') && $data->isNotEmpty()) {
             return $this->exportReport($data, 'project_consumption', $request->export);
         }
 
-        return view('reports.project_consumption', compact('data', 'filters'));
+        $projects = \App\Models\Project::orderBy('name')->get();
+        return view('reports.project_consumption', compact('data', 'filters', 'projects'));
     }
 
     public function supplierPerformance(Request $request)
@@ -85,11 +88,21 @@ class ReportsController extends Controller
     {
         switch ($format) {
             case 'pdf':
-                $pdf = Pdf::loadView("reports.pdf.{$reportName}", compact('data'));
-                return $pdf->download("{$reportName}_" . date('Y-m-d') . ".pdf");
+                try {
+                    $pdf = Pdf::loadView("reports.pdf.{$reportName}", compact('data'));
+                    return $pdf->download("{$reportName}_" . date('Y-m-d') . ".pdf");
+                } catch (\Exception $e) {
+                    // Fallback to simple view if PDF template doesn't exist
+                    $view = "reports.{$reportName}";
+                    if (!view()->exists($view)) {
+                        return redirect()->back()->with('error', 'PDF export template not found.');
+                    }
+                    $pdf = Pdf::loadView($view, compact('data'));
+                    return $pdf->download("{$reportName}_" . date('Y-m-d') . ".pdf");
+                }
 
             case 'csv':
-                return $this->reportService->exportToCsv($data->toArray(), "{$reportName}_" . date('Y-m-d') . ".csv");
+                return $this->reportService->exportToCsv($data, $reportName);
 
             case 'json':
                 return response()->json($data);

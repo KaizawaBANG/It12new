@@ -3,7 +3,7 @@
 @section('title', 'Add Additional Project Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-plus-circle"></i> Add Additional Project</h1>
         <p class="text-muted mb-0">{{ $changeOrder->change_order_number }}</p>
@@ -20,6 +20,13 @@
                 <i class="bi bi-x-circle"></i> Reject
             </button>
         @endif
+        <form action="{{ route('change-orders.destroy', $changeOrder) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this change order? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('change-orders.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>

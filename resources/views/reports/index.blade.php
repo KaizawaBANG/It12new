@@ -3,7 +3,7 @@
 @section('title', 'Reports')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-graph-up"></i> Reports</h1>
         <p class="text-muted mb-0">Generate and view system reports</p>
@@ -50,21 +50,6 @@
                 <h5 class="report-card-title">Supplier Performance</h5>
                 <p class="report-card-text">Analyze supplier performance metrics and delivery statistics</p>
                 <a href="{{ route('reports.supplier-performance') }}" class="btn btn-primary btn-report">
-                    <i class="bi bi-eye"></i> View Report
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6 col-lg-4">
-        <div class="report-card">
-            <div class="report-card-icon project-icon">
-                <i class="bi bi-folder-x"></i>
-            </div>
-            <div class="report-card-body">
-                <h5 class="report-card-title">Delayed Projects</h5>
-                <p class="report-card-text">View projects that are behind schedule and need attention</p>
-                <a href="{{ route('reports.delayed-projects') }}" class="btn btn-primary btn-report">
                     <i class="bi bi-eye"></i> View Report
                 </a>
             </div>

@@ -3,20 +3,43 @@
 @section('title', 'Purchase Request Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-text"></i> Purchase Request</h1>
         <p class="text-muted mb-0">{{ $purchaseRequest->pr_number }}</p>
     </div>
     <div class="d-flex gap-2">
+        @if($purchaseRequest->status === 'draft')
+            <form method="POST" action="{{ route('purchase-requests.submit', $purchaseRequest) }}" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Submit this purchase request for approval?')">
+                    <i class="bi bi-send"></i> Submit for Approval
+                </button>
+            </form>
+        @endif
         @if($purchaseRequest->status === 'submitted')
             <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
                 @csrf
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request? It will be available for quotation creation.')">
                     <i class="bi bi-check-circle"></i> Approve
                 </button>
             </form>
         @endif
+        @if($purchaseRequest->status === 'draft')
+            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request directly? It will be available for quotation creation.')">
+                    <i class="bi bi-check-circle"></i> Approve Directly
+                </button>
+            </form>
+        @endif
+        <form action="{{ route('purchase-requests.destroy', $purchaseRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this purchase request? This action cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
         <a href="{{ route('purchase-requests.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
@@ -121,6 +144,53 @@
                 </div>
             </div>
         </div>
+
+        @if($purchaseRequest->quotations->count() > 0)
+        <div class="info-card mt-4">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-file-earmark-spreadsheet"></i> Quotations Received</h5>
+                @if($purchaseRequest->quotations->whereIn('status', ['pending', 'accepted'])->count() >= 2)
+                <a href="{{ route('quotations.compare', ['purchase_request_id' => $purchaseRequest->id]) }}" class="btn btn-sm btn-success">
+                    <i class="bi bi-bar-chart"></i> Compare
+                </a>
+                @endif
+            </div>
+            <div class="info-card-body">
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Quotation #</th>
+                                <th>Supplier</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($purchaseRequest->quotations as $quotation)
+                                <tr>
+                                    <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
+                                    <td>{{ $quotation->supplier->name }}</td>
+                                    <td><strong>₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
+                                    <td>
+                                        <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
+                                            {{ ucfirst($quotation->status) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
     
     <div class="col-md-4">
@@ -139,6 +209,21 @@
                     </div>
                     <i class="bi bi-chevron-right"></i>
                 </a>
+                @php
+                    $quotationCount = $purchaseRequest->quotations()->whereIn('status', ['pending', 'accepted'])->count();
+                @endphp
+                @if($quotationCount >= 2)
+                <a href="{{ route('quotations.compare', ['purchase_request_id' => $purchaseRequest->id]) }}" class="quick-action-btn">
+                    <div class="quick-action-icon bg-success">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <span class="quick-action-label">Compare Quotations</span>
+                        <small class="quick-action-desc">Compare prices from {{ $quotationCount }} suppliers</small>
+                    </div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                @endif
             </div>
         </div>
     </div>

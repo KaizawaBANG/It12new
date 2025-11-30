@@ -3,7 +3,7 @@
 @section('title', 'Create Goods Receipt')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-in-down"></i> Create Goods Receipt</h1>
         <p class="text-muted mb-0">Record received goods from a purchase order</p>

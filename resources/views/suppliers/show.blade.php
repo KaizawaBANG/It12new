@@ -3,7 +3,7 @@
 @section('title', 'Supplier Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-truck"></i> Supplier Details</h1>
         <p class="text-muted mb-0">{{ $supplier->name }}</p>
@@ -146,6 +146,240 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="info-card">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-currency-dollar"></i> Supplier Prices</h5>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPriceModal">
+                    <i class="bi bi-plus-circle"></i> Add Price
+                </button>
+            </div>
+            <div class="info-card-body">
+                @if($supplier->prices->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Item Code</th>
+                                    <th>Item Name</th>
+                                    <th>Unit</th>
+                                    <th>Unit Price</th>
+                                    <th>Effective Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($supplier->prices as $price)
+                                    @php
+                                        $isExpired = $price->expiry_date && \Carbon\Carbon::parse($price->expiry_date)->isPast();
+                                        $isActive = !$isExpired && (!$price->effective_date || \Carbon\Carbon::parse($price->effective_date)->isPast());
+                                    @endphp
+                                    <tr>
+                                        <td><span class="font-monospace">{{ $price->inventoryItem->item_code }}</span></td>
+                                        <td>{{ $price->inventoryItem->name }}</td>
+                                        <td><span class="text-muted">{{ $price->inventoryItem->unit_of_measure }}</span></td>
+                                        <td><strong class="text-success">₱{{ number_format($price->unit_price, 2) }}</strong></td>
+                                        <td>
+                                            <span class="text-muted">
+                                                {{ $price->effective_date ? \Carbon\Carbon::parse($price->effective_date)->format('M d, Y') : 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">
+                                                {{ $price->expiry_date ? \Carbon\Carbon::parse($price->expiry_date)->format('M d, Y') : 'No expiry' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($isExpired)
+                                                <span class="badge badge-secondary">Expired</span>
+                                            @elseif($isActive)
+                                                <span class="badge badge-success">Active</span>
+                                            @else
+                                                <span class="badge badge-warning">Pending</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editPriceModal{{ $price->id }}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form method="POST" action="{{ route('suppliers.prices.delete', [$supplier, $price->id]) }}" class="d-inline" onsubmit="return confirm('Delete this price?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <i class="bi bi-currency-dollar"></i>
+                        <p class="mt-3 mb-0">No prices set</p>
+                        <small class="text-muted">Add prices for materials this supplier can provide</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Price Modal -->
+<div class="modal fade" id="addPriceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('suppliers.prices.store', $supplier) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Supplier Price</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Inventory Item <span class="text-danger">*</span></label>
+                        <select name="inventory_item_id" class="form-control" required>
+                            <option value="">Select Item</option>
+                            @foreach($inventoryItems as $item)
+                                <option value="{{ $item->id }}">{{ $item->item_code }} - {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unit Price <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">₱</span>
+                            <input type="number" step="0.01" min="0" name="unit_price" class="form-control" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Effective Date</label>
+                            <input type="date" name="effective_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="date" name="expiry_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Price</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Price Modals -->
+@foreach($supplier->prices as $price)
+<div class="modal fade" id="editPriceModal{{ $price->id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('suppliers.prices.update', [$supplier, $price->id]) }}">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Supplier Price</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Item</label>
+                        <input type="text" class="form-control" value="{{ $price->inventoryItem->item_code }} - {{ $price->inventoryItem->name }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unit Price <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">₱</span>
+                            <input type="number" step="0.01" min="0" name="unit_price" class="form-control" value="{{ $price->unit_price }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Effective Date</label>
+                            <input type="date" name="effective_date" class="form-control" value="{{ $price->effective_date ? \Carbon\Carbon::parse($price->effective_date)->format('Y-m-d') : date('Y-m-d') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="date" name="expiry_date" class="form-control" value="{{ $price->expiry_date ? \Carbon\Carbon::parse($price->expiry_date)->format('Y-m-d') : '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes">{{ $price->notes }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Price</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
+
+@push('styles')
+<style>
+    .table-modern {
+        margin-bottom: 0;
+    }
+    
+    .table-modern thead th {
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        font-weight: 600;
+        color: #374151;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 0.75rem;
+    }
+    
+    .table-modern tbody td {
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .table-modern tbody tr:hover {
+        background: #f9fafb;
+    }
+    
+    .empty-state {
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .empty-state i {
+        font-size: 2.5rem;
+        color: #9ca3af;
+    }
+    
+    .empty-state p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        margin-top: 0.75rem;
+    }
+</style>
+@endpush
 
 @push('styles')
 <style>
@@ -392,6 +626,15 @@
         color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+    
+    .badge-warning {
+        background: #f59e0b;
+        color: #ffffff;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 </style>
 @endpush

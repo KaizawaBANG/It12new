@@ -14,7 +14,6 @@ class Project extends Model
         'project_code',
         'name',
         'description',
-        'client_id',
         'project_manager_id',
         'start_date',
         'end_date',
@@ -35,11 +34,6 @@ class Project extends Model
             'budget' => 'decimal:2',
             'actual_cost' => 'decimal:2',
         ];
-    }
-
-    public function client()
-    {
-        return $this->belongsTo(User::class, 'client_id');
     }
 
     public function projectManager()
@@ -65,6 +59,30 @@ class Project extends Model
     public function fabricationJobs()
     {
         return $this->hasMany(FabricationJob::class);
+    }
+
+    public function quotations()
+    {
+        return $this->hasManyThrough(
+            Quotation::class,
+            PurchaseRequest::class,
+            'project_id', // Foreign key on purchase_requests table
+            'purchase_request_id', // Foreign key on quotations table
+            'id', // Local key on projects table
+            'id' // Local key on purchase_requests table
+        );
+    }
+
+    public function purchaseOrders()
+    {
+        return $this->hasManyThrough(
+            PurchaseOrder::class,
+            PurchaseRequest::class,
+            'project_id', // Foreign key on purchase_requests table
+            'purchase_request_id', // Foreign key on purchase_orders table
+            'id', // Local key on projects table
+            'id' // Local key on purchase_requests table
+        );
     }
 }
 

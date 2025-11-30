@@ -131,23 +131,36 @@ class ReportService
             });
     }
 
-    public function exportToCsv($data, $filename)
+    public function exportToCsv($data, $reportName)
     {
+        $filename = "{$reportName}_" . date('Y-m-d') . ".csv";
         $headers = [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function () use ($data) {
+        $callback = function () use ($data, $reportName) {
             $file = fopen('php://output', 'w');
             
-            if (count($data) > 0) {
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            if ($data->isEmpty()) {
+                fputcsv($file, ['No data available']);
+                fclose($file);
+                return;
+            }
+            
+            // Format data based on report type
+            $formattedData = $this->formatDataForCsv($data, $reportName);
+            
+            if (count($formattedData) > 0) {
                 // Write headers
-                fputcsv($file, array_keys((array) $data[0]));
+                fputcsv($file, array_keys($formattedData[0]));
                 
                 // Write data
-                foreach ($data as $row) {
-                    fputcsv($file, (array) $row);
+                foreach ($formattedData as $row) {
+                    fputcsv($file, $row);
                 }
             }
             
@@ -155,6 +168,78 @@ class ReportService
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+    
+    protected function formatDataForCsv($data, $reportName)
+    {
+        $formatted = [];
+        
+        switch ($reportName) {
+            case 'inventory_movement':
+                foreach ($data as $movement) {
+                    $formatted[] = [
+                        'Date' => $movement->created_at->format('Y-m-d H:i:s'),
+                        'Item Code' => $movement->inventoryItem->item_code ?? '',
+                        'Item Name' => $movement->inventoryItem->name,
+                        'Movement Type' => ucfirst(str_replace('_', ' ', $movement->movement_type)),
+                        'Quantity' => number_format($movement->quantity, 2),
+                        'Balance After' => number_format($movement->balance_after, 2),
+                        'Reference' => $movement->reference ?? '',
+                    ];
+                }
+                break;
+                
+            case 'purchase_history':
+                foreach ($data as $po) {
+                    $formatted[] = [
+                        'PO Number' => $po->po_number,
+                        'Date' => $po->po_date ? $po->po_date->format('Y-m-d') : '',
+                        'Supplier' => $po->supplier->name ?? '',
+                        'Status' => ucfirst($po->status),
+                        'Total Amount' => number_format($po->total_amount ?? 0, 2),
+                        'Items Count' => $po->items->count(),
+                    ];
+                }
+                break;
+                
+            case 'supplier_performance':
+                foreach ($data as $item) {
+                    $formatted[] = [
+                        'Supplier Name' => $item['supplier']->name,
+                        'Total Orders' => $item['total_orders'],
+                        'Completed Orders' => $item['completed_orders'],
+                        'Total Amount' => number_format($item['total_amount'], 2),
+                        'On-Time Deliveries' => $item['on_time_deliveries'],
+                        'On-Time Rate (%)' => number_format($item['on_time_rate'], 2),
+                    ];
+                }
+                break;
+                
+            case 'project_consumption':
+                foreach ($data as $issuance) {
+                    foreach ($issuance->items as $item) {
+                        $formatted[] = [
+                            'Issuance Date' => $issuance->issuance_date ? $issuance->issuance_date->format('Y-m-d') : '',
+                            'MI Number' => $issuance->issuance_number ?? '',
+                            'Item Code' => $item->inventoryItem->item_code ?? '',
+                            'Item Name' => $item->inventoryItem->name,
+                            'Quantity' => number_format($item->quantity, 2),
+                            'Unit' => $item->inventoryItem->unit_of_measure ?? '',
+                        ];
+                    }
+                }
+                break;
+                
+            default:
+                // Generic format
+                foreach ($data as $row) {
+                    if (is_array($row) || is_object($row)) {
+                        $formatted[] = (array) $row;
+                    }
+                }
+        }
+        
+        return $formatted;
     }
 }
 

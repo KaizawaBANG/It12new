@@ -3,7 +3,7 @@
 @section('title', 'Project Details')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-folder"></i> {{ $project->name }}</h1>
         <p class="text-muted mb-0">{{ $project->project_code }}</p>
@@ -36,7 +36,16 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Project Manager</span>
-                        <span class="info-value">{{ $project->projectManager->name ?? 'N/A' }}</span>
+                        <span class="info-value">
+                            @if($project->projectManager)
+                                <div class="fw-semibold">{{ $project->projectManager->name }}</div>
+                                @if($project->projectManager->role)
+                                    <small class="text-muted">{{ $project->projectManager->role->name }}</small>
+                                @endif
+                            @else
+                                N/A
+                            @endif
+                        </span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Start Date</span>
@@ -45,10 +54,6 @@
                     <div class="info-item">
                         <span class="info-label">End Date</span>
                         <span class="info-value">{{ $project->end_date->format('M d, Y') }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Budget</span>
-                        <span class="info-value text-success fw-bold">₱{{ number_format($project->budget, 2) }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Actual Cost</span>
@@ -67,7 +72,14 @@
                     @if($project->description)
                     <div class="info-item full-width">
                         <span class="info-label">Description</span>
-                        <span class="info-value">{{ $project->description }}</span>
+                        <div class="info-value info-text-content">{{ $project->description }}</div>
+                    </div>
+                    @endif
+                    
+                    @if($project->notes)
+                    <div class="info-item full-width">
+                        <span class="info-label">Notes</span>
+                        <div class="info-value info-text-content">{{ $project->notes }}</div>
                     </div>
                     @endif
                 </div>
@@ -116,6 +128,169 @@
                         <i class="bi bi-file-earmark-x"></i>
                         <p class="mt-3 mb-0">No Additional projects</p>
                         <small class="text-muted">Add an additional project to track project modifications</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-file-earmark-text"></i> Purchase Requests</h5>
+                <a href="{{ route('purchase-requests.create', ['project_id' => $project->id]) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> New PR
+                </a>
+            </div>
+            <div class="info-card-body">
+                @if($project->purchaseRequests->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>PR Number</th>
+                                    <th>Purpose</th>
+                                    <th>Requested By</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($project->purchaseRequests as $pr)
+                                    <tr>
+                                        <td><span class="text-muted font-monospace">{{ $pr->pr_number }}</span></td>
+                                        <td>{{ Str::limit($pr->purpose, 50) }}</td>
+                                        <td>{{ $pr->requestedBy->name ?? 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'submitted' ? 'primary' : 'warning') }}">
+                                                {{ ucfirst($pr->status) }}
+                                            </span>
+                                        </td>
+                                        <td><span class="text-muted">{{ $pr->created_at->format('M d, Y') }}</span></td>
+                                        <td>
+                                            <a href="{{ route('purchase-requests.show', $pr) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <i class="bi bi-file-earmark-x"></i>
+                        <p class="mt-3 mb-0">No purchase requests</p>
+                        <small class="text-muted">Create a purchase request to get started</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-file-earmark-check"></i> Quotations</h5>
+            </div>
+            <div class="info-card-body">
+                @php
+                    $quotations = $project->purchaseRequests->flatMap->quotations;
+                @endphp
+                @if($quotations->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Quotation Number</th>
+                                    <th>PR Number</th>
+                                    <th>Supplier</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                    <th>Quotation Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($quotations as $quotation)
+                                    <tr>
+                                        <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
+                                        <td><span class="font-monospace">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
+                                        <td>{{ $quotation->supplier->name ?? 'N/A' }}</td>
+                                        <td><strong class="text-success">₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
+                                        <td>
+                                            <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'warning' : 'secondary') }}">
+                                                {{ ucfirst($quotation->status) }}
+                                            </span>
+                                        </td>
+                                        <td><span class="text-muted">{{ $quotation->quotation_date->format('M d, Y') }}</span></td>
+                                        <td>
+                                            <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <i class="bi bi-file-earmark-x"></i>
+                        <p class="mt-3 mb-0">No quotations</p>
+                        <small class="text-muted">Quotations will appear here once created for purchase requests</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-cart-check"></i> Purchase Orders</h5>
+            </div>
+            <div class="info-card-body">
+                @php
+                    $purchaseOrders = $project->purchaseRequests->flatMap->purchaseOrders;
+                @endphp
+                @if($purchaseOrders->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>PO Number</th>
+                                    <th>PR Number</th>
+                                    <th>Supplier</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                    <th>PO Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($purchaseOrders as $po)
+                                    <tr>
+                                        <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
+                                        <td><span class="font-monospace">{{ $po->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
+                                        <td>{{ $po->supplier->name ?? 'N/A' }}</td>
+                                        <td><strong class="text-success">₱{{ number_format($po->total_amount, 2) }}</strong></td>
+                                        <td>
+                                            <span class="badge badge-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'pending' ? 'warning' : 'secondary')) }}">
+                                                {{ ucfirst($po->status) }}
+                                            </span>
+                                        </td>
+                                        <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
+                                        <td>
+                                            <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <i class="bi bi-file-earmark-x"></i>
+                        <p class="mt-3 mb-0">No purchase orders</p>
+                        <small class="text-muted">Purchase orders will appear here once created from quotations</small>
                     </div>
                 @endif
             </div>
@@ -224,6 +399,19 @@
         font-size: 0.9375rem;
         color: #111827;
         font-weight: 500;
+    }
+    
+    .info-text-content {
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        max-width: 100%;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        margin-top: 0.5rem;
     }
     
     .progress-wrapper {

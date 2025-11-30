@@ -3,7 +3,7 @@
 @section('title', 'Create Purchase Order')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-cart-check"></i> Create Purchase Order</h1>
         <p class="text-muted mb-0">Create a purchase order from a quotation</p>
@@ -24,13 +24,6 @@
                     <span><i class="bi bi-info-circle"></i> Order Information</span>
                 </h5>
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label-custom">
-                            <i class="bi bi-truck"></i> Supplier
-                        </label>
-                        <input type="text" class="form-control-custom" value="{{ $quotation->supplier->name }}" readonly>
-                        <small class="form-help-text">Supplier from selected quotation</small>
-                    </div>
                     <div class="col-md-6">
                         <label class="form-label-custom">
                             <i class="bi bi-calendar-check"></i> Expected Delivery Date
@@ -74,6 +67,7 @@
                                 <thead>
                                     <tr>
                                         <th>Item</th>
+                                        <th>Supplier</th>
                                         <th>Quantity</th>
                                         <th>Unit Price</th>
                                         <th>Total</th>
@@ -85,6 +79,13 @@
                                             <td>
                                                 <div class="fw-semibold">{{ $item->inventoryItem->name }}</div>
                                                 <small class="text-muted font-monospace">{{ $item->inventoryItem->item_code ?? '' }}</small>
+                                            </td>
+                                            <td>
+                                                @if($item->supplier)
+                                                    <span class="badge badge-info">{{ $item->supplier->name }}</span>
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>

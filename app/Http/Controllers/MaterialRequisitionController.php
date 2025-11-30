@@ -40,7 +40,8 @@ class MaterialRequisitionController extends Controller
         if ($request->has('project_id')) {
             $project = Project::findOrFail($request->project_id);
         }
-        return view('purchase_requests.create', compact('project'));
+        $projects = Project::orderBy('name')->get();
+        return view('purchase_requests.create', compact('project', 'projects'));
     }
 
     public function store(Request $request)
@@ -67,7 +68,13 @@ class MaterialRequisitionController extends Controller
 
     public function show(PurchaseRequest $purchaseRequest)
     {
-        $purchaseRequest->load(['project', 'requestedBy', 'approvedBy', 'items.inventoryItem']);
+        $purchaseRequest->load([
+            'project', 
+            'requestedBy', 
+            'approvedBy', 
+            'items.inventoryItem',
+            'quotations.supplier'
+        ]);
         return view('purchase_requests.show', compact('purchaseRequest'));
     }
 
@@ -81,6 +88,18 @@ class MaterialRequisitionController extends Controller
     {
         $purchaseRequest->update(['status' => 'submitted']);
         return redirect()->route('purchase-requests.show', $purchaseRequest)->with('success', 'Purchase request submitted.');
+    }
+
+    public function destroy(PurchaseRequest $purchaseRequest)
+    {
+        // Check if PR has quotations
+        if ($purchaseRequest->quotations()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete purchase request that has associated quotations.');
+        }
+
+        $purchaseRequest->delete();
+
+        return redirect()->route('purchase-requests.index')->with('success', 'Purchase request deleted successfully.');
     }
 }
 

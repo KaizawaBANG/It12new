@@ -3,7 +3,7 @@
 @section('title', 'Edit Goods Item')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-pencil"></i> Edit Goods Item</h1>
         <p class="text-muted mb-0">{{ $inventoryItem->name }}</p>

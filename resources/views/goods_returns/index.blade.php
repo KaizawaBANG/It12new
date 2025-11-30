@@ -3,7 +3,7 @@
 @section('title', 'Goods Returns')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-up"></i> Goods Returns</h1>
         <p class="text-muted mb-0">Manage returned goods and inventory adjustments</p>
@@ -18,6 +18,7 @@
                 <thead>
                     <tr>
                         <th>Return Number</th>
+                        <th>Project Code</th>
                         <th>Goods Receipt</th>
                         <th>Date</th>
                         <th>Status</th>
@@ -29,23 +30,39 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $return->return_number }}</span></td>
                             <td>
+                                @if($return->project_code)
+                                    <span class="badge badge-info font-monospace">{{ $return->project_code }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="fw-semibold font-monospace">{{ $return->goodsReceipt->gr_number }}</div>
                             </td>
-                            <td><span class="text-muted">{{ $return->return_date->format('M d, Y') }}</span></td>
+                            <td><span class="text-muted">{{ $return->return_date ? $return->return_date->format('M d, Y') : 'N/A' }}</span></td>
                             <td>
                                 <span class="badge badge-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($return->status) }}
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('goods-returns.show', $return) }}" class="btn btn-sm btn-action btn-view" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('goods-returns.show', $return) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form action="{{ route('goods-returns.destroy', $return) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this goods return? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-action btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-box-arrow-up"></i>
                                     <p class="mt-3 mb-0">No goods returns found</p>
@@ -124,6 +141,18 @@
         color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
     
     .badge-success {

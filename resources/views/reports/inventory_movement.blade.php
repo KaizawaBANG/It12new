@@ -3,7 +3,7 @@
 @section('title', 'Inventory Movement Report')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-in-up"></i> Inventory Movement Report</h1>
         <p class="text-muted mb-0">Track stock movements and inventory history</p>

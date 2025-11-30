@@ -12,6 +12,7 @@ class GoodsReceipt extends Model
 
     protected $fillable = [
         'gr_number',
+        'project_code',
         'purchase_order_id',
         'gr_date',
         'status',

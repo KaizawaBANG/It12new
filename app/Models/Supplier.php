@@ -31,5 +31,16 @@ class Supplier extends Model
     {
         return $this->hasMany(PurchaseOrder::class);
     }
+
+    public function prices()
+    {
+        return $this->hasMany(SupplierPrice::class);
+    }
+
+    public function getPriceForItem($inventoryItemId)
+    {
+        $price = $this->prices()->where('inventory_item_id', $inventoryItemId)->first();
+        return $price ? $price->unit_price : null;
+    }
 }
 
